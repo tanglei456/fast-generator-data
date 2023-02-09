@@ -90,7 +90,9 @@ public class GeneratorServiceImpl implements GeneratorService {
             throw new ServerException("表字段不存在!");
         }
 
+        //<tableId,表>
         Map<Long, TableEntity> tableIdKeyTableMap = tableEntities.stream().collect(Collectors.toMap(TableEntity::getId, Function.identity()));
+        //<tableId,字段集合>
         Map<Long, List<TableFieldEntity>> tableFieldMap = tableFieldEntityList
                 .stream()
                 .collect(Collectors.toMap(TableFieldEntity::getTableId, tableFieldEntity -> new ArrayList<>(Collections.singletonList(tableFieldEntity))
@@ -98,7 +100,6 @@ public class GeneratorServiceImpl implements GeneratorService {
                             oldList.addAll(newList);
                             return oldList;
                         }));
-
 
         //获取外键集合 , key:tableId+foreignName
         Map<String, List<Map<String, Object>>> foreignKeyMap = foreignKeyMap(tableFieldEntityList, tableIdKeyTableMap);
@@ -109,7 +110,6 @@ public class GeneratorServiceImpl implements GeneratorService {
             clientIP = ServletUtil.getClientIP(ServletUtils.getRequest());
             initProgress(tableEntities);
         }
-
 
         for (TableEntity table : tableEntities) {
             String finalClientIP = clientIP;
@@ -125,7 +125,7 @@ public class GeneratorServiceImpl implements GeneratorService {
                 CommonConnectSource commonConnectSource = genDataSource.getDbType().connectDB(genDataSource);
 
                 //测试数据模板
-                String template = getDataTemplate(tableFieldEntities);
+                String template = generatorDataTemplate(tableFieldEntities);
                 //预处理需要替换入参的mock类型 如 @Js @contact
                 Map<String, List<String>> mockNameKeyMap = preHandleReferParamMockType(tableFieldEntities, table.getDatasourceId());
 
@@ -307,7 +307,7 @@ public class GeneratorServiceImpl implements GeneratorService {
                         mockExpressionParam[0] = mockExpressionParam[0].replace(s, String.valueOf(o));
                     }
                 });
-                ref.set(MockRuleEnum.getMockNameIncludeKh(mockName)+"("  + mockExpressionParam[0] + ")");
+                ref.set(MockRuleEnum.getMockNameIncludeKh(mockName) + "(" + mockExpressionParam[0] + ")");
             }
         });
         return ref.get();
@@ -316,8 +316,8 @@ public class GeneratorServiceImpl implements GeneratorService {
     private boolean isReferParamMockType(String mockName) {
         if (mockName == null || !mockName.contains("(")) return false;
 
-        String substring = MockRuleEnum.getMockNameIncludeKh(mockName) ;
-        return MockRuleEnum.MOCK_JS.getMockName().equals(substring)||MockRuleEnum.MOCK_CONTACT.getMockName().equals(substring);
+        String substring = MockRuleEnum.getMockNameIncludeKh(mockName);
+        return MockRuleEnum.MOCK_JS.getMockName().equals(substring) || MockRuleEnum.MOCK_CONTACT.getMockName().equals(substring);
     }
 
     /**
@@ -353,14 +353,13 @@ public class GeneratorServiceImpl implements GeneratorService {
                                 String substring = s.substring(s.indexOf("@{") + 2, s.lastIndexOf("}")).split("\\.", 2)[1];
                                 mockExpressionParam[0] = mockExpressionParam[0].replace(s, (String) getForeignValue(substring, data));
                             }
-                            return MockRuleEnum.getMockNameIncludeKh(mockName)+"(" + mockExpressionParam[0] + ")";
+                            return MockRuleEnum.getMockNameIncludeKh(mockName) + "(" + mockExpressionParam[0] + ")";
                         }).collect(Collectors.toList());
                         jsTemplateMap.put(mockName, jsTemplateList);
                     }
                 });
             }
         }
-
 
 
         return jsTemplateMap;
@@ -386,7 +385,7 @@ public class GeneratorServiceImpl implements GeneratorService {
     }
 
     @NotNull
-    private String getDataTemplate(List<TableFieldEntity> tableFieldEntities) {
+    private String generatorDataTemplate(List<TableFieldEntity> tableFieldEntities) {
         Map<String, Object> templateData = TypeFormatUtil.formatOriginalData(tableFieldEntities);
         String template = JSON.toJSONString(templateData);
         template = template.replaceAll("\"\\{@", "{").replaceAll("@}\"", "}");
@@ -484,7 +483,7 @@ public class GeneratorServiceImpl implements GeneratorService {
 
             //生成测试数据
             table.setDataNumber(1);
-            String dataTemplate = getDataTemplate(tableFieldEntityList);
+            String dataTemplate = generatorDataTemplate(tableFieldEntityList);
             result = generatorTestData(table, dataTemplate, tableFieldEntityList, foreignKeyMap, new HashMap<>()).get(0);
         } else {
             log.info("tableName不存在:" + tableName);
@@ -514,7 +513,7 @@ public class GeneratorServiceImpl implements GeneratorService {
         Map result = new HashMap<>();
         TableEntity tableEntity = tableService.getTableEntityContainFieldInfo(Long.valueOf(tableId));
         List<TableFieldEntity> fieldList = tableEntity.getFieldList();
-        String dataTemplate = getDataTemplate(tableEntity.getFieldList());
+        String dataTemplate = generatorDataTemplate(tableEntity.getFieldList());
         tableEntity.setDataNumber(1);
         List<Map<String, Object>> mapList = generatorTestData(tableEntity, dataTemplate, fieldList, GENERATED_DATA, new HashMap<>());
         result.put(tableEntity.getTableName(), mapList);
