@@ -20,7 +20,6 @@ import java.util.Collections;
  *
  * @author lz love you
  */
-@Slf4j
 public class BaseServiceImpl<M extends BaseMapper<T>, T> extends ServiceImpl<M, T> implements BaseService<T> {
 
     /**

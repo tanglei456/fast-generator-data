@@ -51,6 +51,12 @@ public enum DbType {
         public CommonConnectSource connectDB(GenDataSource genDataSource) {
             return new ApiConSource(genDataSource);
         }
+    },
+    Kafka(""){
+        @Override
+        public CommonConnectSource connectDB(GenDataSource genDataSource) {
+            return new KafkaConSource(genDataSource);
+        }
     };
 
     private final String driverClass;
@@ -90,6 +96,8 @@ public enum DbType {
         }
         if (StrUtil.equalsAny(dbType, "Api")) {
             return Api;
+        } if (StrUtil.equalsAny(dbType, "Kafka")) {
+            return Kafka;
         }
         return null;
     }

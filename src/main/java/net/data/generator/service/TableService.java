@@ -8,6 +8,7 @@ import net.data.generator.entity.TableFieldEntity;
 import net.data.generator.entity.vo.CascaderVo;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 数据表
@@ -16,9 +17,20 @@ import java.util.List;
  */
 public interface TableService extends BaseService<TableEntity> {
 
+    /**
+     * 份额与查询页面
+     * @param query
+     * @return
+     */
     PageResult<TableEntity> page(Query query);
 
+    /**
+     * 表名查询表字段信息
+     * @param tableName
+     * @return
+     */
     TableEntity getByTableName(String tableName);
+
 
     TableEntity getByTableId(String tableId);
 
@@ -46,15 +58,24 @@ public interface TableService extends BaseService<TableEntity> {
     /**
      * 更新表字段，智能合并字段
      *
-     * @param id               表id
+     * @param tableId          表id
      * @param dbTableFieldList 数据源的字段列表
      */
-    void smartMerge(Long id, List<TableFieldEntity> dbTableFieldList);
+    void smartMerge(Long tableId, List<TableFieldEntity> dbTableFieldList);
 
     /**
      * 包含字段
+     *
      * @param id
      * @return
      */
     TableEntity getTableEntityContainFieldInfo(Long id);
+
+    /**
+     * 模板导入
+     *
+     * @param templateMap 模板对象 <tableName,字段对象Map>
+     * @param datasourceId
+     */
+    void templateImport(Map<String, Object> templateMap, Long datasourceId);
 }

@@ -34,17 +34,6 @@ public class GeneratorController {
     }
 
     /**
-     * 导入模板
-     */
-    @ResponseBody
-    @PostMapping("/template")
-    public Result<String> importMockTemplate(@RequestBody Query query) throws Exception {
-        // 生成测试数据
-        generatorService.batchGeneratorMockData(query.getTableIds(), false);
-        return Result.ok();
-    }
-
-    /**
      * 接口编排（顺序）
      */
     @ResponseBody

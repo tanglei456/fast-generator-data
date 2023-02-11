@@ -53,11 +53,17 @@ public class DataSourceServiceImpl extends BaseServiceImpl<DataSourceDao, DataSo
 
     @Override
     public List<DataSourceEntity> getList(Query query) {
+        List<DataSourceEntity> dataSourceEntities =new ArrayList<>();
         if (ObjectUtil.isNotNull(query.getFilterExistTable()) && query.getFilterExistTable()) {
-            return baseMapper.selectListContainTable();
+            dataSourceEntities = baseMapper.selectListContainTable();
         } else {
-            return baseMapper.selectList(new QueryWrapper<>());
+            dataSourceEntities = baseMapper.selectList(new QueryWrapper<>());
         }
+        for (DataSourceEntity dataSourceEntity : dataSourceEntities) {
+            //连接名拼接数据源类型
+            dataSourceEntity.setConnName(dataSourceEntity.getConnName()+"("+dataSourceEntity.getDbType()+")");
+        }
+        return dataSourceEntities;
     }
 
     @Override

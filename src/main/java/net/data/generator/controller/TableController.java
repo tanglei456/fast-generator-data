@@ -1,5 +1,7 @@
 package net.data.generator.controller;
 
+import cn.hutool.core.io.IoUtil;
+import com.alibaba.fastjson.JSON;
 import lombok.AllArgsConstructor;
 import net.data.generator.common.page.PageResult;
 import net.data.generator.common.query.Query;
@@ -10,9 +12,14 @@ import net.data.generator.entity.vo.CascaderVo;
 import net.data.generator.service.TableFieldService;
 import net.data.generator.service.TableService;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.constraints.NotBlank;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 数据表管理
@@ -98,6 +105,22 @@ public class TableController {
     }
 
     /**
+     * 导入JSON模板
+     * 模板结构  {"tableName":"字段对象","tableName":"字段对象"}
+     */
+    @ResponseBody
+    @PostMapping("/template")
+    public Result<String> importTemplate(@RequestBody MultipartFile multipartFile,Long datasourceId) throws Exception {
+        //解析文件
+        byte[] bytes = multipartFile.getBytes();
+        String jsonStr = new String(bytes);
+        Map map = JSON.parseObject(jsonStr, Map.class);
+        // 生成测试数据
+        tableService.templateImport(map,datasourceId );
+        return Result.ok();
+    }
+
+    /**
      * 修改表字段数据
      *
      * @param tableId        表ID
@@ -111,7 +134,7 @@ public class TableController {
     }
 
     /**
-     * 修改表字段数据
+     * 获取级联结构
      *
      * @param datasourceId 数据源id
      */

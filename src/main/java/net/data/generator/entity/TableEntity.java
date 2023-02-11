@@ -64,7 +64,7 @@ public class TableEntity {
     private List<TableFieldEntity> fieldList;
 
     /**
-     * 数据源名
+     * 数据源名,不需要入库
      */
     @TableField(exist = false)
     private String datasourceName;

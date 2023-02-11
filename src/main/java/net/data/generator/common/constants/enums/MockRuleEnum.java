@@ -1,28 +1,29 @@
 package net.data.generator.common.constants.enums;
 
 import cn.hutool.core.date.DateField;
+import cn.hutool.core.date.DateTime;
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import net.data.generator.common.constants.ConstantCache;
+import net.data.generator.common.constants.DbFieldType;
 import net.data.generator.common.exception.ServerException;
 import net.data.generator.common.utils.data.RandomValueUtil;
-import net.data.generator.common.constants.DbFieldType;
-import net.data.generator.entity.MockRule;
 import net.data.generator.entity.TableFieldEntity;
 import nl.flotsam.xeger.Xeger;
 import org.bson.types.ObjectId;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.StringJoiner;
+import java.util.UUID;
 
 /**
  * @author tanglei
@@ -71,7 +72,7 @@ public enum MockRuleEnum {
     }, Date("Date") {
         @Override
         public Object getRandomValue(Object... params) {
-            return JSON.toJSONString(RandomValueUtil.randomDate(new Date(), DateField.DAY_OF_WEEK, 20, 100), SerializerFeature.UseISO8601DateFormat);
+            return JSON.toJSONString(RandomValueUtil.randomDate(new Date(), DateField.DAY_OF_MONTH, 1, 30), SerializerFeature.UseISO8601DateFormat);
         }
     }, BLOB("Blob") {
         @Override
@@ -303,7 +304,7 @@ public enum MockRuleEnum {
                 }
                 return RandomValueUtil.county();
             } catch (Exception e) {
-                log.error("异常:{}", e.getStackTrace());
+                log.error("异常:{}", e);
                 return null;
             }
 
@@ -312,7 +313,6 @@ public enum MockRuleEnum {
         @Override
         public Object getRandomValue(Object... params) {
             try {
-
                 return RandomValueUtil.province();
             } catch (Exception e) {
                 log.error("异常:{}", e.getStackTrace());
@@ -410,6 +410,25 @@ public enum MockRuleEnum {
             String[] mockExpressionParam = MockRuleEnum.getMockExpressionParam(params);
             return mockExpressionParam[RandomValueUtil.randomInt(mockExpressionParam.length)];
         }
+    }, MOCK_DATE("@date") {
+        @Override
+        public Object getRandomValue(Object... params) {
+            String[] mockExpressionParam = MockRuleEnum.getMockExpressionParam(params);
+            String startTime = mockExpressionParam[0];
+            DateTime startDate = DateUtil.parse(startTime);
+            DateTime dateTime =null;
+            if (mockExpressionParam.length>1) {
+                String endTime = mockExpressionParam[1];
+                DateTime endDate = DateUtil.parse(endTime);
+                long subTime=endDate.getTime()-startDate.getTime();
+                dateTime = RandomValueUtil.randomDate(startDate, DateField.MILLISECOND, 0, Integer.parseInt(String.valueOf(subTime)));
+            }
+            if (mockExpressionParam.length==1){
+                dateTime = RandomValueUtil.randomDate(startDate, DateField.DAY_OF_MONTH, 0, 60);
+            }
+
+            return dateTime!=null?JSON.toJSONString(dateTime,SerializerFeature.UseISO8601DateFormat):null;
+        }
     };
 
     @Nullable
@@ -476,13 +495,6 @@ public enum MockRuleEnum {
         String fieldName = field.getFieldName();
         String columnType = field.getColumnType();
         String attrType = field.getAttrType();
-
-//        if (fieldNameKeyMockRuleMap.get(fieldName.toLowerCase()) != null) {
-//            if (field.getAttrType().equals(DbFieldType.OBJECT_ID)) {
-//                return null;
-//            }
-//            return fieldNameKeyMockRuleMap.get(fieldName.toLowerCase()).getName();
-//        }
 
         // 如果是主键给予 UUID mock类型
         if (field.isPrimaryPk()) {

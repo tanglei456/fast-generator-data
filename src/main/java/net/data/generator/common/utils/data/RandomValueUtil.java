@@ -2,6 +2,7 @@ package net.data.generator.common.utils.data;
 
 import cn.hutool.cache.Cache;
 import cn.hutool.cache.CacheUtil;
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.convert.Convert;
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.lang.Console;
@@ -1477,6 +1478,9 @@ public class RandomValueUtil extends RandomUtil {
         String tableId = foreignKey.split("\\.", 2)[0];
         if (randomForeignMap.get(tableId) == null) {
             List<Map<String, Object>> objectList = foreignKeyMap.get(tableId);
+            if (CollUtil.isEmpty(objectList)){
+                return null;
+            }
             Map<String, Object> map = objectList.get(RandomValueUtil.randomInt(objectList.size()));
             randomForeignMap.put(tableId, map);
             return map.get(foreignKey);

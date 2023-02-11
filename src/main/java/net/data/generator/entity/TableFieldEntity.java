@@ -77,7 +77,7 @@ public class TableFieldEntity implements DataTree<TableFieldEntity> {
     private boolean uniqueIndex;
 
     /**
-     * 主键 0：否  1：是
+     * 自增 0：否  1：是
      */
     private boolean autoIncrement;
 

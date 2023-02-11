@@ -6,13 +6,14 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import lombok.extern.slf4j.Slf4j;
+import net.data.generator.common.config.GenDataSource;
 import net.data.generator.common.config.GeneratorSetting;
 import net.data.generator.common.constants.DbFieldType;
 import net.data.generator.common.exception.ServerException;
 import net.data.generator.common.page.PageResult;
 import net.data.generator.common.query.Query;
 import net.data.generator.common.service.impl.BaseServiceImpl;
-import net.data.generator.common.config.GenDataSource;
+import net.data.generator.common.utils.TypeFormatUtil;
 import net.data.generator.common.utils.tree.TreeUtils;
 import net.data.generator.dao.TableDao;
 import net.data.generator.datasource.CommonConnectSource;
@@ -23,7 +24,6 @@ import net.data.generator.entity.vo.CascaderVo;
 import net.data.generator.service.DataSourceService;
 import net.data.generator.service.TableFieldService;
 import net.data.generator.service.TableService;
-import net.data.generator.common.utils.TypeFormatUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -101,7 +101,7 @@ public class TableServiceImpl extends BaseServiceImpl<TableDao, TableEntity> imp
         for (String tableName : tableNameList) {
             // 查询表是否存在
             TableEntity table = this.getByTableName(tableName);
-            boolean exist=table!=null;
+            boolean exist = table != null;
             //表不存在,保存表
             if (!exist) {
                 // 从数据库获取表信息
@@ -169,16 +169,17 @@ public class TableServiceImpl extends BaseServiceImpl<TableDao, TableEntity> imp
     /**
      * 更新表字段，智能合并字段
      *
-     * @param id               表id
+     * @param tableId          表id
      * @param dbTableFieldList 数据源的字段列表
      */
-    public void smartMerge(Long id, List<TableFieldEntity> dbTableFieldList) {
+    @Override
+    public void smartMerge(Long tableId, List<TableFieldEntity> dbTableFieldList) {
         List<String> dbTableFieldNameList = dbTableFieldList.stream().map(TableFieldEntity::getFieldName).collect(Collectors.toList());
 
         // 表字段列表
-        List<TableFieldEntity> tableFieldList = tableFieldService.getByTableId(id);
+        List<TableFieldEntity> tableFieldList = tableFieldService.getByTableId(tableId);
         //<字段名,字段>
-        Map<String, TableFieldEntity> tableFieldMap = tableFieldList.stream().collect(Collectors.toMap(TableFieldEntity::getFieldName, Function.identity(),(oldData,newData)->oldData));
+        Map<String, TableFieldEntity> tableFieldMap = tableFieldList.stream().collect(Collectors.toMap(TableFieldEntity::getFieldName, Function.identity(), (oldData, newData) -> oldData));
 
         // 同步表结构字段
         dbTableFieldList.forEach(field -> {
@@ -220,14 +221,41 @@ public class TableServiceImpl extends BaseServiceImpl<TableDao, TableEntity> imp
         //判断字段是否为叶子节点
         for (TableFieldEntity tableField : fieldList) {
             String attrType = tableField.getAttrType();
-            if (!DbFieldType.OBJECT.equals(attrType)&&!DbFieldType.ARRAYS.equals(attrType)){
+            if (!DbFieldType.OBJECT.equals(attrType) && !DbFieldType.ARRAYS.equals(attrType)) {
                 tableField.setLeaf(true);
-            }else {
+            } else {
                 tableField.setLeaf(false);
             }
         }
         table.setFieldList(fieldList);
         return table;
+    }
+
+    /**
+     * 模板导入
+     *
+     * @param templateMap  模板对象
+     * @param datasourceId
+     */
+    @Override
+    public void templateImport(Map<String, Object> templateMap, Long datasourceId) {
+
+        templateMap.forEach((tableName, fieldMap) -> {
+            //保存表
+            TableEntity tableEntity = new TableEntity();
+            tableEntity.setTableName(tableName);
+            tableEntity.setDataNumber(generatorSetting.getDataNumber());
+            tableEntity.setCreateTime(new Date());
+            tableEntity.setDatasourceId(datasourceId);
+            this.save(tableEntity);
+            //保存字段信息
+            List<TableFieldEntity> tableFieldEntities = TypeFormatUtil.formatTreeFieldEntity((Map<String, Object>) fieldMap, tableEntity.getId());
+            //初始化字段
+            tableFieldService.initFieldList(tableFieldEntities);
+            //保存字段信息
+            tableFieldService.saveBatch(tableFieldEntities);
+        });
+
     }
 
     @Override
@@ -256,9 +284,12 @@ public class TableServiceImpl extends BaseServiceImpl<TableDao, TableEntity> imp
             cascaderVo.setTableId(tableField.getTableId());
             cascaderVo.setValue(tableField.getFieldName());
             cascaderVo.setLabel(tableField.getFieldName());
+            //叶子节点
+            if (!DbFieldType.OBJECT.equals(tableField.getAttrType()) && !DbFieldType.ARRAYS.equals(tableField.getAttrType())) {
+                cascaderVo.setLeaf(true);
+            }
             return cascaderVo;
         }).collect(Collectors.groupingBy(CascaderVo::getTableId));
-
 
         //级联树关联上表
         List<CascaderVo> returnCascaders = new ArrayList<>();
@@ -269,6 +300,7 @@ public class TableServiceImpl extends BaseServiceImpl<TableDao, TableEntity> imp
             }
             CascaderVo temVo = new CascaderVo();
             temVo.setTableId(table.getId());
+
             List<CascaderVo> collect = cascaders.stream().peek(cascaderVo -> {
                 if (cascaderVo.getParentId() == null || cascaderVo.getParentId() == 0) {
                     cascaderVo.setParentId(table.getId());

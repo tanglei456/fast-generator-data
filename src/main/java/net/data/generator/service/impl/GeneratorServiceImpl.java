@@ -110,7 +110,6 @@ public class GeneratorServiceImpl implements GeneratorService {
             clientIP = ServletUtil.getClientIP(ServletUtils.getRequest());
             initProgress(tableEntities);
         }
-
         for (TableEntity table : tableEntities) {
             String finalClientIP = clientIP;
             executorService.execute(() -> {
@@ -129,7 +128,7 @@ public class GeneratorServiceImpl implements GeneratorService {
                 //预处理需要替换入参的mock类型 如 @Js @contact
                 Map<String, List<String>> mockNameKeyMap = preHandleReferParamMockType(tableFieldEntities, table.getDatasourceId());
 
-                //生成的数据量
+                //生成的数据量,分批次生成
                 Integer dataNumber = table.getDataNumber();
                 int number = 1;
                 int batchNumber = 1000;
@@ -140,10 +139,8 @@ public class GeneratorServiceImpl implements GeneratorService {
                         } else {
                             table.setDataNumber(batchNumber);
                         }
-
                         //生成测试数据
                         List<Map<String, Object>> mapList = generatorTestData(table, template, tableFieldEntities, foreignKeyMap, mockNameKeyMap);
-
                         //保存测试数据
                         try {
                             saveDataService.execute(() -> {
@@ -351,7 +348,7 @@ public class GeneratorServiceImpl implements GeneratorService {
                             //替换引用
                             for (String s : list) {
                                 String substring = s.substring(s.indexOf("@{") + 2, s.lastIndexOf("}")).split("\\.", 2)[1];
-                                mockExpressionParam[0] = mockExpressionParam[0].replace(s, (String) getForeignValue(substring, data));
+                                mockExpressionParam[0] = mockExpressionParam[0].replace(s, String.valueOf(getForeignValue(substring, data)));
                             }
                             return MockRuleEnum.getMockNameIncludeKh(mockName) + "(" + mockExpressionParam[0] + ")";
                         }).collect(Collectors.toList());

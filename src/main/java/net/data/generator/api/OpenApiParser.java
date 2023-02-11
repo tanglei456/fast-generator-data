@@ -37,6 +37,7 @@ import net.data.generator.entity.TableFieldEntity;
 import net.data.generator.service.DataSourceService;
 import net.data.generator.service.TableFieldService;
 import net.data.generator.service.TableService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -51,9 +52,12 @@ import java.util.Map;
 @Component
 @AllArgsConstructor
 public class OpenApiParser {
-    private final DataSourceService datasourceService;
-    private final TableService tableService;
-    private final TableFieldService fieldService;
+    @Autowired
+    private  DataSourceService datasourceService;
+    @Autowired
+    private  TableService tableService;
+    @Autowired
+    private  TableFieldService fieldService;
     private final GeneratorSetting setting;
     private final TableFieldService tableFieldService;
 

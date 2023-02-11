@@ -91,9 +91,6 @@ public class MongoConSource extends CommonConnectSourceImpl {
         BulkOperations bulkOperations = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, tableName);
         bulkOperations.insert(mapList);
         bulkOperations.execute();
-//        List<List<Map<String, Object>>> split = ListUtil.split(mapList, 20000);
-//        for (List<Map<String, Object>> maps : split) {
-//        }
     }
 
     @Override

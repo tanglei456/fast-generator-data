@@ -8,12 +8,15 @@ import net.data.generator.common.constants.enums.MockRuleEnum;
 import net.data.generator.dao.TableFieldDao;
 import net.data.generator.entity.FieldTypeEntity;
 import net.data.generator.entity.TableFieldEntity;
-import net.data.generator.service.FieldTypeService;
 import net.data.generator.service.TableFieldService;
+import net.data.generator.service.TableService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /**
  * 表字段
@@ -21,9 +24,9 @@ import java.util.Map;
  * @author tanglei
  */
 @Service
-@AllArgsConstructor
 public class TableFieldServiceImpl extends BaseServiceImpl<TableFieldDao, TableFieldEntity> implements TableFieldService {
-    private final FieldTypeService fieldTypeService;
+    @Autowired
+    private  TableService tableService;
 
     @Override
     public List<TableFieldEntity> getByTableId(Long tableId) {
@@ -37,16 +40,16 @@ public class TableFieldServiceImpl extends BaseServiceImpl<TableFieldDao, TableF
 
     @Override
     public void updateTableField(Long tableId, List<TableFieldEntity> tableFieldList) {
-        // 更新字段数据
-        int sort = 0;
-        for (TableFieldEntity tableField : tableFieldList) {
+        //处理更新数据
+        AtomicInteger sort = new AtomicInteger();
+        List<TableFieldEntity> collect = tableFieldList.stream().peek(tableField -> {
             if (CollUtil.isEmpty(tableField.getForeignKeys())) {
                 tableField.setForeignKey(null);
             }
-
-            tableField.setSort(sort++);
-            this.updateById(tableField);
-        }
+            tableField.setSort(sort.getAndIncrement());
+        }).collect(Collectors.toList());
+        // 更新字段数据
+        tableService.smartMerge(tableId,collect);
     }
 
     public void initFieldList(List<TableFieldEntity> tableFieldList) {

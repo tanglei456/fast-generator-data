@@ -2,6 +2,7 @@ package net.data.generator.entity.vo;
 
 import cn.hutool.core.lang.tree.Tree;
 import cn.hutool.core.lang.tree.TreeNode;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import net.data.generator.common.utils.tree.DataTree;
@@ -21,5 +22,10 @@ public class CascaderVo implements DataTree<CascaderVo> {
     private Long id;
     private Long parentId;
     private Long tableId;
+    /**
+     * 叶子节点
+     */
+    @ApiModelProperty(hidden = false)
+    private boolean leaf;
     private List<CascaderVo> children;
 }
