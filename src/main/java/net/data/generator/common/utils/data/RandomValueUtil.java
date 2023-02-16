@@ -21,6 +21,7 @@ import net.data.generator.common.constants.ConstantCache;
 import net.data.generator.common.constants.enums.MockRuleEnum;
 import net.data.generator.entity.FieldTypeEntity;
 import net.data.generator.entity.MockRule;
+import net.data.generator.service.impl.GeneratorServiceImpl;
 
 import javax.script.ScriptException;
 import javax.validation.constraints.NotNull;
@@ -206,9 +207,9 @@ public class RandomValueUtil extends RandomUtil {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < length; i++) {
             sb.append(getChar());
-            if (i % 20 == 0) {
-                sb.append(getSymbol(1, null));
-            }
+//            if (i % 20 == 0) {
+//                sb.append(getSymbol(1, null));
+//            }
         }
         return sb.toString();
     }
@@ -1336,6 +1337,9 @@ public class RandomValueUtil extends RandomUtil {
      * @return
      */
     public static String getRandomStr(Integer min, Integer max) {
+        if (max==null&&min!=null){
+            return randomString(min);
+        }
         if (min == null) {
             min = 1;
         }
@@ -1469,7 +1473,7 @@ public class RandomValueUtil extends RandomUtil {
                 return "";
             }
         } catch (Exception e) {
-            log.error("异常:{}", e);
+            log.error("数据生成异常:", e);
         }
         return randomData;
     }
@@ -1489,7 +1493,31 @@ public class RandomValueUtil extends RandomUtil {
         }
     }
 
+    public static Object getRandomDataByEnumName(String enumName,String fullFieldName, Map<String, List<Map<String, Object>>> foreignKeyMap, Map<String, Map<String, Object>> randomForeignMap) {
+        String mockTypeObjName = GeneratorServiceImpl.getMockTypeObjName(enumName);
+        if (randomForeignMap.get(fullFieldName) == null) {
+            List<Map<String, Object>> objectList = foreignKeyMap.get(mockTypeObjName);
+            if (CollUtil.isEmpty(objectList)){
+                return null;
+            }
+            Map<String, Object> map = objectList.get(RandomValueUtil.randomInt(objectList.size()));
+            randomForeignMap.put(mockTypeObjName, map);
+            return map.get(fullFieldName);
+        } else {
+            return randomForeignMap.get(mockTypeObjName).get(fullFieldName);
+        }
+    }
+
     public static String getNumberStr(Integer min, Integer max) {
+        if (max==null&&min!=null){
+            return randomString("0123456789", min);
+        }
+        if (min==null){
+            min=1;
+        }
+        if (max==null){
+            max=10;
+        }
         return randomString("0123456789", randomInt(min, max));
     }
 }

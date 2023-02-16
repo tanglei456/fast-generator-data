@@ -2,6 +2,7 @@ package net.data.generator.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ArrayUtil;
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -121,7 +122,7 @@ public class TableServiceImpl extends BaseServiceImpl<TableDao, TableEntity> imp
 
             // 表存在,进行智能合并
             if (exist) {
-                smartMerge(table.getId(), tableFieldEntities);
+                smartMerge(table.getId(), tableFieldEntities, false);
                 log.warn(tableName + "已存在,进行智能合并");
                 continue;
             }
@@ -158,7 +159,7 @@ public class TableServiceImpl extends BaseServiceImpl<TableDao, TableEntity> imp
 
         if ("1".equals(type)) {
             //智能合并
-            smartMerge(id, tableFieldEntities);
+            smartMerge(id, tableFieldEntities,false );
         } else {
             //全覆盖
             tableFieldService.deleteBatchTableIds(new Long[]{id});
@@ -168,12 +169,12 @@ public class TableServiceImpl extends BaseServiceImpl<TableDao, TableEntity> imp
 
     /**
      * 更新表字段，智能合并字段
-     *
-     * @param tableId          表id
+     *  @param tableId          表id
      * @param dbTableFieldList 数据源的字段列表
+     * @param isUpdateAllField
      */
     @Override
-    public void smartMerge(Long tableId, List<TableFieldEntity> dbTableFieldList) {
+    public void smartMerge(Long tableId, List<TableFieldEntity> dbTableFieldList, boolean isUpdateAllField) {
         List<String> dbTableFieldNameList = dbTableFieldList.stream().map(TableFieldEntity::getFieldName).collect(Collectors.toList());
 
         // 表字段列表
@@ -194,6 +195,12 @@ public class TableServiceImpl extends BaseServiceImpl<TableDao, TableEntity> imp
             updateField.setPrimaryPk(field.isPrimaryPk());
             updateField.setFieldComment(field.getFieldComment());
             updateField.setFieldType(field.getFieldType());
+            if (isUpdateAllField) {
+                updateField.setMockName(field.getMockName());
+            }
+            if (isUpdateAllField) {
+                updateField.setForeignKey(field.getForeignKey());
+            }
             updateField.setAttrType(field.getAttrType());
             tableFieldService.updateById(updateField);
         });
@@ -238,22 +245,28 @@ public class TableServiceImpl extends BaseServiceImpl<TableDao, TableEntity> imp
      * @param datasourceId
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void templateImport(Map<String, Object> templateMap, Long datasourceId) {
 
         templateMap.forEach((tableName, fieldMap) -> {
-            //保存表
-            TableEntity tableEntity = new TableEntity();
-            tableEntity.setTableName(tableName);
-            tableEntity.setDataNumber(generatorSetting.getDataNumber());
-            tableEntity.setCreateTime(new Date());
-            tableEntity.setDatasourceId(datasourceId);
-            this.save(tableEntity);
-            //保存字段信息
-            List<TableFieldEntity> tableFieldEntities = TypeFormatUtil.formatTreeFieldEntity((Map<String, Object>) fieldMap, tableEntity.getId());
-            //初始化字段
-            tableFieldService.initFieldList(tableFieldEntities);
-            //保存字段信息
-            tableFieldService.saveBatch(tableFieldEntities);
+            try {
+                //保存表
+                TableEntity tableEntity = new TableEntity();
+                tableEntity.setTableName(tableName);
+                tableEntity.setDataNumber(generatorSetting.getDataNumber());
+                tableEntity.setCreateTime(new Date());
+                tableEntity.setDatasourceId(datasourceId);
+                this.save(tableEntity);
+                //保存字段信息
+                List<TableFieldEntity> tableFieldEntities = TypeFormatUtil.formatTreeFieldEntity((Map<String, Object>) fieldMap, tableEntity.getId());
+                //初始化字段
+                tableFieldService.initFieldList(tableFieldEntities);
+                //保存字段信息
+                tableFieldService.saveBatch(tableFieldEntities);
+            }
+            catch(Exception e){
+                throw new ServerException("表名重复:"+tableName);
+            }
         });
 
     }

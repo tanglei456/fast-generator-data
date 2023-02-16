@@ -2,14 +2,22 @@ package net.data.generator.common.utils;
 
 import cn.hutool.Hutool;
 import cn.hutool.core.net.Ipv4Util;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.extra.servlet.ServletUtil;
 import cn.hutool.socket.SocketUtil;
 import com.github.fge.jsonschema.format.common.IPv6Attribute;
 
 import javax.websocket.RemoteEndpoint;
 import javax.websocket.Session;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.reflect.Field;
-import java.net.InetSocketAddress;
+import java.net.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.List;
 
 /**
  * @author tanglei
@@ -19,7 +27,7 @@ import java.net.InetSocketAddress;
  */
 public class SocketUtils {
 
-    public static String getIp(Session session) {
+    public static List<String> getIps(Session session) {
         if (session == null) {
             return null;
         }
@@ -29,9 +37,33 @@ public class SocketUtils {
         String hostAddress = addr.getAddress().getHostAddress();
 
         if ("0:0:0:0:0:0:0:1".equals(hostAddress)) {
-            return "10.3.8.236";
+           return getLocalNetIp();
         }
-        return hostAddress;
+        return Collections.singletonList(hostAddress);
+    }
+
+
+    public static List<String> getLocalNetIp() {
+        Enumeration<NetworkInterface> nifs = null;
+        try {
+            nifs = NetworkInterface.getNetworkInterfaces();
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
+        List<String> ips=new ArrayList<>();
+        while (nifs.hasMoreElements()) {
+            NetworkInterface nif = nifs.nextElement();
+            Enumeration<InetAddress> address = nif.getInetAddresses();
+            while (address.hasMoreElements()) {
+                InetAddress addr = address.nextElement();
+                if (addr instanceof Inet4Address) {
+                    System.out.println("网卡名称：" + nif.getName());
+                    System.out.println("网络接口地址：" + addr.getHostAddress());
+                    ips.add(addr.getHostAddress());
+                }
+            }
+        }
+        return ips;
     }
 
     private static Object getFieldInstance(Object obj, String fieldPath) {

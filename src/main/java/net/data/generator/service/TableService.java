@@ -57,11 +57,11 @@ public interface TableService extends BaseService<TableEntity> {
 
     /**
      * 更新表字段，智能合并字段
-     *
-     * @param tableId          表id
+     *  @param tableId          表id
      * @param dbTableFieldList 数据源的字段列表
+     * @param isUpdateAllField
      */
-    void smartMerge(Long tableId, List<TableFieldEntity> dbTableFieldList);
+    void smartMerge(Long tableId, List<TableFieldEntity> dbTableFieldList, boolean isUpdateAllField);
 
     /**
      * 包含字段

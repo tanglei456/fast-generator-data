@@ -1,7 +1,6 @@
 package net.data.generator.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
-import lombok.AllArgsConstructor;
 import net.data.generator.common.service.impl.BaseServiceImpl;
 import net.data.generator.common.constants.ConstantCache;
 import net.data.generator.common.constants.enums.MockRuleEnum;
@@ -49,7 +48,7 @@ public class TableFieldServiceImpl extends BaseServiceImpl<TableFieldDao, TableF
             tableField.setSort(sort.getAndIncrement());
         }).collect(Collectors.toList());
         // 更新字段数据
-        tableService.smartMerge(tableId,collect);
+        tableService.smartMerge(tableId,collect, true);
     }
 
     public void initFieldList(List<TableFieldEntity> tableFieldList) {

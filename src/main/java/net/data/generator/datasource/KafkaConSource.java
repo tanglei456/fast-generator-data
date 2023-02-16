@@ -41,7 +41,13 @@ public class KafkaConSource extends CommonConnectSourceImpl{
 
     @Override
     public boolean testConnect(GenDataSource datasource) {
-        kafkaTemplate.send("test","test");
+        try {
+            kafkaTemplate.send("test","test");
+
+        }catch (Exception e){
+            log.error("kafka连接失败",e);
+            return false;
+        }
         return true;
     }
 

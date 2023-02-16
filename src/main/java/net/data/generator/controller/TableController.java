@@ -50,7 +50,7 @@ public class TableController {
      */
     @GetMapping("{id}")
     public Result<TableEntity> get(@PathVariable("id") Long id) {
-        TableEntity tableEntity=tableService.getTableEntityContainFieldInfo(id);
+        TableEntity tableEntity = tableService.getTableEntityContainFieldInfo(id);
         return Result.ok(tableEntity);
     }
 
@@ -85,7 +85,7 @@ public class TableController {
      * @param id 类型1:覆盖 类型2:智能合并
      */
     @PostMapping("sync/{id}/{type}")
-    public Result<String> sync(@PathVariable("id")@NotBlank Long id
+    public Result<String> sync(@PathVariable("id") @NotBlank Long id
             , @PathVariable @NotBlank(message = "类型不能为空") String type) {
         tableService.sync(id, type);
 
@@ -100,7 +100,7 @@ public class TableController {
      */
     @PostMapping("import/{datasourceId}")
     public Result<String> tableImport(@PathVariable("datasourceId") Long datasourceId, @RequestBody List<String> tableNameList) {
-        tableService.tableImport(datasourceId,tableNameList);
+        tableService.tableImport(datasourceId, tableNameList);
         return Result.ok();
     }
 
@@ -108,15 +108,25 @@ public class TableController {
      * 导入JSON模板
      * 模板结构  {"tableName":"字段对象","tableName":"字段对象"}
      */
-    @ResponseBody
-    @PostMapping("/template")
-    public Result<String> importTemplate(@RequestBody MultipartFile multipartFile,Long datasourceId) throws Exception {
+    @PostMapping("import/template")
+    public Result<String> importTemplate(@RequestPart("file") MultipartFile multipartFile) throws Exception {
         //解析文件
         byte[] bytes = multipartFile.getBytes();
         String jsonStr = new String(bytes);
-        Map map = JSON.parseObject(jsonStr, Map.class);
+        return Result.ok(jsonStr);
+    }
+
+    /**
+     * JSON模板
+     * 模板结构  {"tableName":"字段对象","tableName":"字段对象"}
+     */
+    @PostMapping("save/template/{datasourceId}/{file}")
+    public Result<String> saveTemplate(@PathVariable(name = "datasourceId") Long datasourceId
+            , @PathVariable(name = "file") String file) throws Exception {
+        //解析文件
+        Map map = JSON.parseObject(file, Map.class);
         // 生成测试数据
-        tableService.templateImport(map,datasourceId );
+        tableService.templateImport(map, datasourceId);
         return Result.ok();
     }
 

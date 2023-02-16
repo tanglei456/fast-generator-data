@@ -8,6 +8,7 @@ import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.extra.servlet.ServletUtil;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.parser.Feature;
 import lombok.AllArgsConstructor;
@@ -66,7 +67,7 @@ public class GeneratorServiceImpl implements GeneratorService {
     /**
      * 创建一个数据生成线程 3的线程池
      */
-    private final ExecutorService executorService = Executors.newFixedThreadPool(3);
+    private final ExecutorService executorService = Executors.newFixedThreadPool(4);
 
     /**
      * 数据保存线程
@@ -78,8 +79,8 @@ public class GeneratorServiceImpl implements GeneratorService {
     /**
      * 批量生成mock数据
      *
-     * @param tableIds
-     * @param hasProgress
+     * @param tableIds    表id数组
+     * @param hasProgress 是否需要进度
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -93,8 +94,7 @@ public class GeneratorServiceImpl implements GeneratorService {
         //<tableId,表>
         Map<Long, TableEntity> tableIdKeyTableMap = tableEntities.stream().collect(Collectors.toMap(TableEntity::getId, Function.identity()));
         //<tableId,字段集合>
-        Map<Long, List<TableFieldEntity>> tableFieldMap = tableFieldEntityList
-                .stream()
+        Map<Long, List<TableFieldEntity>> tableFieldMap = tableFieldEntityList.stream()
                 .collect(Collectors.toMap(TableFieldEntity::getTableId, tableFieldEntity -> new ArrayList<>(Collections.singletonList(tableFieldEntity))
                         , (oldList, newList) -> {
                             oldList.addAll(newList);
@@ -103,6 +103,10 @@ public class GeneratorServiceImpl implements GeneratorService {
 
         //获取外键集合 , key:tableId+foreignName
         Map<String, List<Map<String, Object>>> foreignKeyMap = foreignKeyMap(tableFieldEntityList, tableIdKeyTableMap);
+        //获取@enum 枚举对象集合 key:对象名
+        Map<String, List<Map<String, Object>>> stringListMap = parseEnumObjType(tableFieldEntityList);
+        //合并集合
+        foreignKeyMap.putAll(stringListMap);
 
         //初始化进度
         String clientIP = null;
@@ -242,7 +246,7 @@ public class GeneratorServiceImpl implements GeneratorService {
         //根据模板生成测试数据
         int dataNumber = table.getDataNumber();
         for (int i = 0; i < dataNumber; i++) {
-            //外键数据,获取随机直接返回直接返回
+            //同对象外键数据
             Map<String, Map<String, Object>> randomForeignMap = new HashMap<>();
             Map<Long, Object> testDataMap = new HashMap<>();
             Map<String, Object> refParamMockMap = new HashMap<>();
@@ -250,11 +254,18 @@ public class GeneratorServiceImpl implements GeneratorService {
                 Object value = null;
                 //除了Object和Arrays需根据规则生成测试数据
                 if (!DbFieldType.OBJECT.equals(tableField.getAttrType()) && !DbFieldType.ARRAYS.equals(tableField.getAttrType())) {
+                    String mockName = tableField.getMockName();
+                    String fullFieldName = tableField.getFullFieldName();
                     //外键
                     if (tableField.getForeignKey() != null) {
                         value = RandomValueUtil.getRandomDataByForeignKey(tableField.getForeignKey(), foreignKeyMap, randomForeignMap);
+                    }
+                    //枚举
+                    else if (mockName!=null&&(MockRuleEnum.getMockNameIncludeKh(mockName).equals(MockRuleEnum.MOCK_ENUM.getMockName()) &&
+                            mockName.contains("{"))) {
+                        value = RandomValueUtil.getRandomDataByEnumName(mockName, fullFieldName, foreignKeyMap, randomForeignMap);
                     } else {
-                        value = RandomValueUtil.getRandomDataByType(tableField.getMockName(), tableField.getAttrType(), tableField.isUniqueIndex());
+                        value = RandomValueUtil.getRandomDataByType(mockName, tableField.getAttrType(), tableField.isUniqueIndex());
                     }
                 }
                 refParamMockMap.put(tableField.getFullFieldName(), value);
@@ -285,23 +296,27 @@ public class GeneratorServiceImpl implements GeneratorService {
 
     private Object preHandleThisRefParamMockType(String mockName, Map<String, Object> jsRefMap) {
         //解析js参数
-        Map<String, List<String>> tableNameKeyParamMap = parseJsVariable(mockName);
+        Set<String> paramSet = parseMockRefVariable(mockName);
+        Map<String, List<String>> tableNameKeyParamMap = paramSet.stream().collect(Collectors.groupingBy(result -> result.substring(0, result.indexOf("."))));
+
         if (CollUtil.isEmpty(tableNameKeyParamMap)) {
             return mockName;
         }
-
         AtomicReference<String> ref = new AtomicReference<>();
         tableNameKeyParamMap.forEach((tableName, list) -> {
-            //非this,从其他库里取数据
+            //this
             if ("this".equals(tableName)) {
                 //如果是js类型的mock数据,进行脚本处理替换
-                String[] mockExpressionParam = new String[]{MockRuleEnum.getMockParam(mockName)};
+                String[] mockExpressionParam = new String[]{MockRuleEnum.getMockParamIncludeSymol(mockName)};
                 list.forEach(data -> {
                     //替换引用
                     for (String s : list) {
-                        String substring = s.substring(s.indexOf("@{") + 2, s.lastIndexOf("}")).split("\\.", 2)[1];
-                        Object o = jsRefMap.get(substring);
-                        mockExpressionParam[0] = mockExpressionParam[0].replace(s, String.valueOf(o));
+                        String substring = s.split("\\.", 2)[1];
+                        Object obj = jsRefMap.get(substring);
+                        if (obj instanceof String) {
+                            obj = "\"" + obj + "\"";
+                        }
+                        mockExpressionParam[0] = mockExpressionParam[0].replace(s, String.valueOf(obj));
                     }
                 });
                 ref.set(MockRuleEnum.getMockNameIncludeKh(mockName) + "(" + mockExpressionParam[0] + ")");
@@ -315,6 +330,56 @@ public class GeneratorServiceImpl implements GeneratorService {
 
         String substring = MockRuleEnum.getMockNameIncludeKh(mockName);
         return MockRuleEnum.MOCK_JS.getMockName().equals(substring) || MockRuleEnum.MOCK_CONTACT.getMockName().equals(substring);
+    }
+
+    private Map<String, List<Map<String, Object>>> parseEnumObjType(List<TableFieldEntity> tableFieldEntities) {
+        Map<String, List<Map<String, Object>>> enumObjMap = new HashMap<>();
+
+        //根据枚举中的对象名分组
+        Map<String, List<TableFieldEntity>> collect = tableFieldEntities.stream()
+                .filter(tableField -> {
+                    return tableField.getMockName() != null
+                            && MockRuleEnum.getMockNameIncludeKh(tableField.getMockName()).equals(MockRuleEnum.MOCK_ENUM.getMockName()) &&
+                            tableField.getMockName().contains("{");
+                })
+                .collect(Collectors.groupingBy(tableField ->
+                        getMockTypeObjName(tableField.getMockName())
+                ));
+
+        collect.forEach((name, tableFieldEntityList) -> {
+                    List<Map<String, Object>> mapList = new ArrayList<>();
+                    for (TableFieldEntity tableFieldEntity : tableFieldEntityList) {
+                        //解析js参数
+                        String mockName = tableFieldEntity.getMockName();
+                        String jsonStr = mockName.substring(mockName.indexOf("{"), mockName.lastIndexOf("}")+1);
+                        JSONObject jsonObject = JSONObject.parseObject(jsonStr);
+                        //表示枚举定义对象
+                        if (jsonStr.startsWith("{")) {
+                            JSONArray jsonArray = jsonObject.getJSONArray(name);
+                            if (CollUtil.isEmpty(mapList)) {
+                                for (Object o : jsonArray) {
+                                    Map<String, Object> objectMap = new HashMap<>();
+                                    objectMap.put(tableFieldEntity.getFullFieldName(), o);
+                                    mapList.add(objectMap);
+                                }
+                            } else {
+                                for (Object o : jsonArray) {
+                                    for (Map<String, Object> objectMap : mapList) {
+                                        objectMap.put(tableFieldEntity.getFullFieldName(), o);
+                                    }
+                                }
+                            }
+                            enumObjMap.put(name, mapList);
+                        }
+                    }
+                }
+        );
+        return enumObjMap;
+    }
+
+    @NotNull
+    public static String getMockTypeObjName(String mockName) {
+        return mockName.substring(mockName.indexOf("({\"" )+ 3, mockName.indexOf("\":"));
     }
 
     /**
@@ -333,28 +398,34 @@ public class GeneratorServiceImpl implements GeneratorService {
                 continue;
             }
 
-            //如果是需要引用入参类型的mock数据,进行脚本处理替换
+            //需要引用入参类型的mock数据,进行脚本参数引用替换处理
             if (isReferParamMockType(mockName)) {
-                String[] mockExpressionParam = new String[]{MockRuleEnum.getMockParam(mockName)};
+                String[] mockExpressionParam = new String[]{MockRuleEnum.getMockParamIncludeSymol(mockName)};
                 //解析js参数
-                Map<String, List<String>> tableNameKeyParamMap = parseJsVariable(mockName);
+                Set<String> paramSet = parseMockRefVariable(mockName);
 
-                tableNameKeyParamMap.forEach((tableName, list) -> {
-                    //非this,从其他库里取数据
-                    if (!"this".equals(tableName)) {
-                        //查询数据
-                        List<JSONObject> dataList = commonConnectSource.getListByTableName(genDataSource, new Query().setTableName(tableName));
-                        List<String> jsTemplateList = dataList.stream().map(data -> {
-                            //替换引用
-                            for (String s : list) {
-                                String substring = s.substring(s.indexOf("@{") + 2, s.lastIndexOf("}")).split("\\.", 2)[1];
-                                mockExpressionParam[0] = mockExpressionParam[0].replace(s, String.valueOf(getForeignValue(substring, data)));
+                paramSet.stream()
+                        .collect(Collectors.groupingBy(result -> result.substring(0, result.indexOf("."))))
+                        .forEach((tableName, list) -> {
+                            //表示非this,需要从其他表里取数据
+                            if (!"this".equals(tableName)) {
+                                //查询数据
+                                List<JSONObject> dataList = commonConnectSource.getListByTableName(genDataSource, new Query().setTableName(tableName));
+                                List<String> jsTemplateList = dataList.stream().map(data -> {
+                                    //替换引用
+                                    for (String s : list) {
+                                        String substring = s.split("\\.", 2)[1];
+                                        Object replacement = getForeignValue(substring, data);
+                                        if (replacement instanceof String) {
+                                            replacement = "\"" + replacement + "\"";
+                                        }
+                                        mockExpressionParam[0] = mockExpressionParam[0].replace(s, String.valueOf(replacement));
+                                    }
+                                    return MockRuleEnum.getMockNameIncludeKh(mockName) + "(" + mockExpressionParam[0] + ")";
+                                }).collect(Collectors.toList());
+                                jsTemplateMap.put(mockName, jsTemplateList);
                             }
-                            return MockRuleEnum.getMockNameIncludeKh(mockName) + "(" + mockExpressionParam[0] + ")";
-                        }).collect(Collectors.toList());
-                        jsTemplateMap.put(mockName, jsTemplateList);
-                    }
-                });
+                        });
             }
         }
 
@@ -366,8 +437,8 @@ public class GeneratorServiceImpl implements GeneratorService {
      * @param jsMockName
      * @return <tableName,参数集合>
      */
-    private Map<String, List<String>> parseJsVariable(String jsMockName) {
-        String[] mockExpressionParam = new String[]{MockRuleEnum.getMockParam(jsMockName)};
+    private Set<String> parseMockRefVariable(String jsMockName) {
+        String[] mockExpressionParam = new String[]{MockRuleEnum.getMockParamIncludeSymol(jsMockName)};
         //编译正则表达式
         Pattern patten = Pattern.compile("@\\{[\\w.}]*");
         // 指定要匹配的字符串
@@ -375,10 +446,10 @@ public class GeneratorServiceImpl implements GeneratorService {
 
         Set<String> matcherSet = new HashSet<>();
         while (matcher.find()) {
-            matcherSet.add(matcher.group());
+            String group = matcher.group();
+            matcherSet.add(group.substring(group.indexOf("@{") + 2, group.lastIndexOf("}")));
         }
-        Map<String, List<String>> collect = matcherSet.stream().collect(Collectors.groupingBy(result -> result.substring(result.indexOf("@{") + 2, result.indexOf("."))));
-        return collect;
+        return matcherSet;
     }
 
     @NotNull

@@ -4,6 +4,7 @@ import cn.hutool.core.net.Ipv4Util;
 import cn.hutool.core.util.URLUtil;
 import cn.hutool.extra.servlet.ServletUtil;
 import cn.hutool.socket.SocketUtil;
+import com.alibaba.fastjson2.JSON;
 import lombok.extern.slf4j.Slf4j;
 import net.data.generator.common.utils.SocketUtils;
 import org.apache.tomcat.util.net.IPv6Utils;
@@ -13,6 +14,7 @@ import javax.websocket.*;
 import javax.websocket.server.PathParam;
 import javax.websocket.server.ServerEndpoint;
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 
@@ -39,15 +41,16 @@ public class WebSocketServer {
     @OnOpen
     public void onOpen(Session session) {
         this.session = session;
-        String ip = SocketUtils.getIp(session);
-        log.warn(ip);
-        if (webSocketMap.containsKey(ip)) {
-            webSocketMap.remove(ip);
-            webSocketMap.put(ip, this);
-        } else {
-            webSocketMap.put(ip, this);
+        List<String> ips = SocketUtils.getIps(session);
+        log.warn(JSON.toJSONString(ips));
+        for (String ip : ips) {
+            if (webSocketMap.containsKey(ip)) {
+                webSocketMap.remove(ip);
+                webSocketMap.put(ip, this);
+            } else {
+                webSocketMap.put(ip, this);
+            }
         }
-
         try {
             sendMessage("连接成功");
         } catch (IOException e) {

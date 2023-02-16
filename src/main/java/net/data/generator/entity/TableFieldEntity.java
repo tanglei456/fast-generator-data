@@ -90,8 +90,17 @@ public class TableFieldEntity implements DataTree<TableFieldEntity> {
     @TableField(exist = false)
     private String columnType;
 
+    /**
+     * 叶子节点
+     */
     @TableField(exist = false)
     private Boolean leaf;
+
+    /**
+     * 是否开启弹窗
+     */
+    @TableField(exist = false)
+    private Boolean popup;
 
     /**
      * 外键(格式:  字段名);

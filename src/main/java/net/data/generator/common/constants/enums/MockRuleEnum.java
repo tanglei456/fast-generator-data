@@ -4,6 +4,8 @@ import cn.hutool.core.date.DateField;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.ArrayUtil;
+import cn.hutool.core.util.IdUtil;
+import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.serializer.SerializerFeature;
@@ -20,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
+import javax.validation.constraints.Null;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.StringJoiner;
@@ -96,9 +99,14 @@ public enum MockRuleEnum {
                         return RandomValueUtil.randomString(Integer.parseInt(param));
                     } else return getRandomByStrType(param, null, null);
                 } else if (mockExpressionParam.length == 2) {
-                    int min = Integer.parseInt(mockExpressionParam[0]);
-                    int max = Integer.parseInt(mockExpressionParam[1]);
-                    return RandomValueUtil.getRandomStr(min, max);
+                    if (mockExpressionParam[0].matches("\\d+")){
+                        int min = Integer.parseInt(mockExpressionParam[0]);
+                        int max = Integer.parseInt(mockExpressionParam[1]);
+                        return RandomValueUtil.getRandomStr(min, max);
+                    }else {
+                        int min = Integer.parseInt(mockExpressionParam[1]);
+                        return getRandomByStrType(mockExpressionParam[0], min,null);
+                    }
                 } else {
                     int min = Integer.parseInt(mockExpressionParam[1]);
                     int max = Integer.parseInt(mockExpressionParam[2]);
@@ -347,7 +355,7 @@ public enum MockRuleEnum {
         @Override
         public Object getRandomValue(Object... params) {
             try {
-                return RandomValueUtil.id();
+                return IdUtil.getSnowflake(1, 1).nextId();
             } catch (Exception e) {
                 log.error("id mock生成异常", e);
                 return null;
@@ -378,12 +386,12 @@ public enum MockRuleEnum {
         @Override
         public Object getRandomValue(Object... params) {
             try {
-                String param = MockRuleEnum.getMockParam(String.valueOf(params[0]));
+                String param = MockRuleEnum.getMockParamIncludeSymol(String.valueOf(params[0]));
                 String delimiter = param.substring(0,2);
                 String[] split = param.substring(4).split(",");
                 StringJoiner stringJoiner=new StringJoiner(delimiter);
                 Arrays.stream(split).forEach(stringJoiner::add);
-                return stringJoiner.toString().replaceAll("'","");
+                return stringJoiner.toString().replaceAll("'", "").replaceAll("\"", "");
             } catch (Exception e) {
                 log.error("拼接串异常", e);
                 return null;
@@ -414,6 +422,9 @@ public enum MockRuleEnum {
         @Override
         public Object getRandomValue(Object... params) {
             String[] mockExpressionParam = MockRuleEnum.getMockExpressionParam(params);
+            if (mockExpressionParam==null) {
+                return JSON.toJSONString(RandomValueUtil.randomDate(new Date(), DateField.DAY_OF_MONTH, 1, 30), SerializerFeature.UseISO8601DateFormat);
+            }
             String startTime = mockExpressionParam[0];
             DateTime startDate = DateUtil.parse(startTime);
             DateTime dateTime =null;
@@ -432,7 +443,7 @@ public enum MockRuleEnum {
     };
 
     @Nullable
-    private static Object getRandomByStrType(String type, Integer min, Integer max) {
+    private static Object getRandomByStrType(String type, @Null Integer min, @Null Integer max) {
         switch (type.toLowerCase()) {
             case "lower":
                 return RandomValueUtil.getRandomStr(min, max).toLowerCase();
@@ -448,14 +459,17 @@ public enum MockRuleEnum {
 
     public static String[] getMockExpressionParam(Object[] params) {
         String mockName = (String) params[0];
-        if (StrUtil.isNotBlank(getMockParam(mockName))) {
-            String[] split = getMockParam(mockName).split(",");
+        if (StrUtil.isNotBlank(getMockParamIncludeSymol(mockName))) {
+            String[] split = getMockParamIncludeSymol(mockName).split(",");
             return split;
         }
         return null;
     }
 
-    public static String getMockParam(String mockName) {
+    public static String getMockParamIncludeSymol(String mockName) {
+        if (!mockName.contains("(")){
+            return null;
+        }
         return mockName.substring(mockName.indexOf("(") + 1, mockName.indexOf(")"));
     }
 
@@ -511,8 +525,14 @@ public enum MockRuleEnum {
                 StringJoiner stringJoiner = new StringJoiner(",", "(", ")");
                 String mock = "@" + attrType;
                 if (mock.toLowerCase().equals(value.getMockName())) {
+
                     if (StrUtil.equalsIgnoreCase(DbFieldType.STRING, attrType)) {
-                        return value.getMockName() + stringJoiner.add(substring);
+                        //如果是中文 给予词组mock类型
+                        if(substring.matches("[\\u4E00-\\u9FA5]+")){
+                            return MockRuleEnum.MOCK_CWORD.getMockName() + stringJoiner.add("1").add(substring);
+                        }else{
+                            return value.getMockName() + stringJoiner.add("1").add(substring);
+                        }
                     }
                     //手动维护子类型
                     if (columnType.toLowerCase().contains("tinyint")) {
