@@ -9,3 +9,4 @@
 target/
 .idea/
 logs/
+/fast-generator-data.iml
