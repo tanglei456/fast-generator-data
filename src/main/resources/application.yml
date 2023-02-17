@@ -1,0 +1,35 @@
+server:
+  port: 8088
+
+spring:
+  profiles:
+    active: dev
+  datasource:
+    # MySQL
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://10.3.8.236:3306/data_generator?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&CatalogMeansCurrent=true
+    username: root
+    password: 123456
+  main:
+    allow-bean-definition-overriding: true
+
+
+generator:
+   data-number: 100000
+
+mybatis-plus:
+  mapper-locations: classpath:/mapper/*.xml
+  typeAliasesPackage: net.data.generator.entity
+  global-config:
+    db-config:
+      id-type: AUTO
+    banner: false
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+    call-setters-on-nulls: true
+    jdbc-type-for-null: 'null'
+  configuration-properties:
+    prefix:
+    blobType: BLOB
+    boolValue: TRUE

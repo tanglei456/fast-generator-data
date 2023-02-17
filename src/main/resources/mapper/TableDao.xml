@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="net.data.generator.dao.TableDao">
+    <resultMap type="net.data.generator.entity.TableEntity" id="tableResultMap">
+        <result property="datasourceId" column="datasource_id" jdbcType="BIGINT"/>
+        <result property="id" column="id" jdbcType="BIGINT"/>
+        <result property="tableName" column="table_name" jdbcType="VARCHAR"/>
+        <result property="tableComment" column="table_comment" jdbcType="VARCHAR"/>
+        <result property="dataNumber" column="data_number" jdbcType="VARCHAR"/>
+        <collection property="fieldList" resultMap="tableFieldEntityResultMap" />
+    </resultMap>
+    <resultMap type="net.data.generator.entity.TableFieldEntity" id="tableFieldEntityResultMap">
+        <result property="id" column="id" jdbcType="BIGINT"/>
+        <result property="fieldName" column="field_name" jdbcType="VARCHAR"/>
+        <result property="tableId" column="table_id" jdbcType="BIGINT"/>
+        <result property="parentId" column="parent_id" jdbcType="BIGINT"/>
+        <result property="foreignKey" column="foreign_key" jdbcType="VARCHAR"/>
+        <result property="nodeLevel" column="node_level" jdbcType="VARCHAR"/>
+        <result property="sort" column="sort" jdbcType="VARCHAR"/>
+        <result property="fieldType" column="field_type" jdbcType="VARCHAR"/>
+        <result property="fieldComment" column="field_comment" jdbcType="VARCHAR"/>
+        <result property="sort" column="sort" jdbcType="VARCHAR"/>
+        <result property="attrType" column="attrType" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <select id="listByTableIdsRelativeFieldEntity" resultMap="tableResultMap">
+        select te.id table_id,te.datasource_id,te.table_name,
+               tfe.id,tfe.field_name,tfe.field_type,tfe.attr_type,tfe.parent_id,tfe.foreign_key,tfe.node_level
+        from gen_table te
+        left join gen_table_field tfe
+        on te.id=tfe.table_id
+        where te.id in
+        <foreach collection="tableIds" item="tableId" open="("  separator="," close=")">
+            #{tableId}
+        </foreach>
+
+    </select>
+</mapper>

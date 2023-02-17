@@ -1,0 +1,80 @@
+import request from '@/utils/request'
+
+// 查询定时任务调度列表
+export function listJob(query:any) {
+  return request({
+    url: '/gen/job/list',
+    method: 'get',
+    params: query
+  })
+}
+
+
+// 查询定时任务调度详细
+export function getJob(jobId:any) {
+  return request({
+    url: '/gen/job/' + jobId,
+    method: 'get'
+  })
+}
+
+// 新增定时任务调度
+export function addOrUpdateJob(dataForm:any) {
+  if(dataForm.jobId){
+    return request({
+      url: '/gen/job',
+      method: 'put',
+      data: dataForm
+    })
+  }else{
+    return request({
+      url: '/gen/job',
+      method: 'post',
+      data: dataForm
+    })
+  }
+
+}
+
+// 修改定时任务调度
+export function updateJob(data:any) {
+  return request({
+    url: '/gen/job',
+    method: 'put',
+    data: data
+  })
+}
+
+// 删除定时任务调度
+export function delJob(jobId:any) {
+  return request({
+    url: '/gen/job/' + jobId,
+    method: 'delete'
+  })
+}
+
+// 任务状态修改
+export function changeJobStatus(jobId:any, status:any) {
+  const data = {
+    jobId,
+    status
+  }
+  return request({
+    url: '/gen/job/changeStatus',
+    method: 'put',
+    data: data
+  })
+}
+
+
+// 定时任务立即执行一次
+export function runJob(jobId:any) {
+  const data = {
+    jobId
+  }
+  return request({
+    url: '/gen/job/run',
+    method: 'put',
+    data: data
+  })
+}
