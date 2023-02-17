@@ -41,7 +41,7 @@ public class EsConSource extends CommonConnectSourceImpl{
     }
 
     @Override
-    public void batchSave(GenDataSource genDataSource, String tableName, List<Map<String, Object>> mapList) {
+    public void batchSave(GenDataSource genDataSource, String tableName, List<Map<String, Object>> mapList) throws Exception{
 
     }
 

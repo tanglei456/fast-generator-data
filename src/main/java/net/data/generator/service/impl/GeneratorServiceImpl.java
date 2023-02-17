@@ -146,13 +146,15 @@ public class GeneratorServiceImpl implements GeneratorService {
                         //生成测试数据
                         List<Map<String, Object>> mapList = generatorTestData(table, template, tableFieldEntities, foreignKeyMap, mockNameKeyMap);
                         //保存测试数据
-                        try {
                             saveDataService.execute(() -> {
-                                commonConnectSource.batchSave(genDataSource, table.getTableName(), mapList);
+                                try {
+                                    commonConnectSource.batchSave(genDataSource, table.getTableName(), mapList);
+                                } catch (Exception e) {
+                                    log.error("表名:" + table.getTableName() +"生成测试数据异常", e);
+                                    throw new ServerException("保存数据库失败,失败原因:"+e.getMessage());
+                                }
                             });
-                        } catch (Exception e) {
-                            log.error("表名:" + table.getTableName() +"生成测试数据异常", e);
-                        }
+
                         //刷新进度
                         if (hasProgress) {
                             table.setDataNumber(dataNumber);

@@ -57,8 +57,6 @@ public class SocketUtils {
             while (address.hasMoreElements()) {
                 InetAddress addr = address.nextElement();
                 if (addr instanceof Inet4Address) {
-                    System.out.println("网卡名称：" + nif.getName());
-                    System.out.println("网络接口地址：" + addr.getHostAddress());
                     ips.add(addr.getHostAddress());
                 }
             }

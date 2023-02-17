@@ -25,7 +25,7 @@ public interface CommonConnectSource {
 
     List<TableFieldEntity> getTableFieldList(GenDataSource datasource, Long tableId, String tableName);
 
-    void batchSave(GenDataSource datasource, String tableName, List<Map<String, Object>> mapList);
+    void batchSave(GenDataSource datasource, String tableName, List<Map<String, Object>> mapList) throws Exception;
 
     List<JSONObject> getListByTableName(GenDataSource datasource, Query query);
 }

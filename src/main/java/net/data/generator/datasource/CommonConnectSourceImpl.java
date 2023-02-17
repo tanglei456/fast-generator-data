@@ -148,8 +148,7 @@ public class CommonConnectSourceImpl implements CommonConnectSource {
     }
 
     @Override
-    public void batchSave(GenDataSource datasource, String tableName, List<Map<String, Object>> mapList) {
-        try {
+    public void batchSave(GenDataSource datasource, String tableName, List<Map<String, Object>> mapList) throws Exception {
             //记录sql占位符与列索引的位置关系
             Map<String, Integer> map = new HashMap<>();
             String sql = datasource.getDbQuery().tableDataSaveSql(tableName, map, mapList);
@@ -168,10 +167,6 @@ public class CommonConnectSourceImpl implements CommonConnectSource {
             }
             preparedStatement.executeBatch();
             connection.commit();
-        } catch (Exception e) {
-            log.error("保存测试数据异常", e);
-            throw new ServerException("数据保存异常,失败原因:"+e.getMessage());
-        }
     }
 
     @Override

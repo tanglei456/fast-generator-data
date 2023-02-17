@@ -42,7 +42,6 @@ public class WebSocketServer {
     public void onOpen(Session session) {
         this.session = session;
         List<String> ips = SocketUtils.getIps(session);
-        log.warn(JSON.toJSONString(ips));
         for (String ip : ips) {
             if (webSocketMap.containsKey(ip)) {
                 webSocketMap.remove(ip);

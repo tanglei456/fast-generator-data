@@ -201,6 +201,9 @@ public class TableServiceImpl extends BaseServiceImpl<TableDao, TableEntity> imp
             if (isUpdateAllField) {
                 updateField.setForeignKey(field.getForeignKey());
             }
+            if (isUpdateAllField) {
+                updateField.setUniqueIndex(field.isUniqueIndex());
+            }
             updateField.setAttrType(field.getAttrType());
             tableFieldService.updateById(updateField);
         });
