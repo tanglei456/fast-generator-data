@@ -36,7 +36,7 @@ public class SocketUtils {
         InetSocketAddress addr = (InetSocketAddress) getFieldInstance(async, "base#socketWrapper#socket#sc#remoteAddress");
         String hostAddress = addr.getAddress().getHostAddress();
 
-        if ("0:0:0:0:0:0:0:1".equals(hostAddress)) {
+        if ("0:0:0:0:0:0:0:1".equals(hostAddress)||"127.0.0.1".equals(hostAddress)||"localhost".equals(hostAddress)) {
            return getLocalNetIp();
         }
         return Collections.singletonList(hostAddress);
