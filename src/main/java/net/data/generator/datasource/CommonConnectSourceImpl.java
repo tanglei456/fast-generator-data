@@ -170,6 +170,7 @@ public class CommonConnectSourceImpl implements CommonConnectSource {
             connection.commit();
         } catch (Exception e) {
             log.error("保存测试数据异常", e);
+            throw new ServerException("数据保存异常,失败原因:"+e.getMessage());
         }
     }
 

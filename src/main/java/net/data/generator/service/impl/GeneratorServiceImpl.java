@@ -151,7 +151,7 @@ public class GeneratorServiceImpl implements GeneratorService {
                                 commonConnectSource.batchSave(genDataSource, table.getTableName(), mapList);
                             });
                         } catch (Exception e) {
-                            log.error("生成测试数据异常", e);
+                            log.error("表名:" + table.getTableName() +"生成测试数据异常", e);
                         }
                         //刷新进度
                         if (hasProgress) {

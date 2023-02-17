@@ -107,15 +107,6 @@ public class TypeFormatUtil {
                 }
             });
         }
-//        if (source instanceof List) {
-//            if (CollUtil.isEmpty((List<?>) source)) {
-//                return;
-//            }
-//            List<Object> sourceList = (List<Object>) source;
-//            for (Object o : sourceList) {
-//                parseDocument(o, tableFieldEntities, parentId, fullFieldName, tableId);
-//            }
-//        }
     }
 
     @NotNull
