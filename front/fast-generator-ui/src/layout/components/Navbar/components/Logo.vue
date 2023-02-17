@@ -1,8 +1,7 @@
 <template>
 	<div class="sidebar-logo">
-		<!-- <el-avatar src="./favicon.ico"></el-avatar> -->
+		<el-avatar src="src/assets/logo.ico"></el-avatar>
 		<span class="logo-title">Data Generator</span>
-		<a uri=""></a>
 	</div>
 </template>
 
@@ -14,7 +13,7 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	box-shadow: rgba(30, 117, 199, 0.02) 0 1px 4px;
+	box-shadow: rgba(167, 182, 173, 0.02) 0 1px 4px;
 	color: var(--theme-logo-text-color);
 	font-size: 18px;
 	.el-avatar {
