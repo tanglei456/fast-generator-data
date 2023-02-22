@@ -104,17 +104,6 @@ public class TableController {
         return Result.ok();
     }
 
-    /**
-     * 导入JSON模板
-     * 模板结构  {"tableName":"字段对象","tableName":"字段对象"}
-     */
-    @PostMapping("import/template")
-    public Result<String> importTemplate(@RequestPart("file") MultipartFile multipartFile) throws Exception {
-        //解析文件
-        byte[] bytes = multipartFile.getBytes();
-        String jsonStr = new String(bytes);
-        return Result.ok(jsonStr);
-    }
 
     /**
      * JSON模板
@@ -122,7 +111,7 @@ public class TableController {
      */
     @PostMapping("save/template/{datasourceId}/{file}")
     public Result<String> saveTemplate(@PathVariable(name = "datasourceId") Long datasourceId
-            , @PathVariable(name = "file") String file) throws Exception {
+            , @PathVariable(name = "file") String file)  {
         //解析文件
         Map map = JSON.parseObject(file, Map.class);
         // 生成测试数据
