@@ -1,7 +1,7 @@
 # fast-generator-data
 
 ## 项目说明
-- fast-data-generator是一款基于mybatisplus+springboot+MYSQL简单易上手,操作简单,非开放人员也能快速上手，能快速生成大量测试数据,支持多数据源
+- fast-data-generator是一款基于mybatisplus+springboot+MYSQL+quartzs简单易上手,操作简单,非开放人员也能快速上手，能快速生成大量测试数据,支持定时生成测数据、支持多数据源
   -脚手架来自gitee开源项目maku
 
 ## 项目特点
@@ -11,6 +11,7 @@
 - 支持测试数据关联外键
 - 支持自定义mock规则
 - 支持快速生成大数量符合规范标准的测试数据
+- 支持编写定时规则定时生成测数据,
 - 支持测试数据按照指定字段导出为excel
 - 支持同步API接口，并进行简单的测试
 
@@ -21,7 +22,6 @@
 - 修改application.yml，更新MySQL账号和密码、数据库名称
 - 运行GeneratorApplication.java，则可启动项目
 - 项目访问路径：http://localhost:8088/maku-generator/index.html
--
 
 ## 效果图
 
