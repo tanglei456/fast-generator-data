@@ -2,7 +2,7 @@
 
 ## 项目说明
 - fast-data-generator是一款基于mybatisplus+springboot+MYSQL+quartzs 的一款能快速生成测试数据的软件
-- 支持多数据源和定时生成测试数据
+
 ## 项目特点
 - 支持MySQL、Oracle、SQLServer、PostgreSQL、达梦8、MONGO、KAFKA、API等主流数据源
 - 支持批量导入表、json导入及同步表结构等功能
