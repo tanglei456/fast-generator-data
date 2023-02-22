@@ -3,12 +3,12 @@
 		<Logo />
 		<div class="navbar-left"></div>
 		<div class="navbar-right">
-			<!-- <a href="https://github.com/makunet/maku-generator" target="_blank">
+			<a href="https://github.com/tanglei456/fast-generator-data.git" target="_blank">
 				<svg-icon icon="icon-github-fill"></svg-icon>
 			</a>
-			<a href="https://gitee.com/makunet/maku-generator" target="_blank">
+			<a href="https://gitee.com/tt_welcome_you/fast-generator-data.git" target="_blank">
 				<svg-icon icon="icon-gitee"></svg-icon>
-			</a> -->
+			</a>
 		</div>
 	</div>
 </template>

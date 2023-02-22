@@ -72,8 +72,8 @@
 									popper-class="my-autocomplete"
 									:fetch-suggestions="querySearch"
 									placeholder="规则"
-									clearable
 									show-word-limit
+									select-when-unmatchedyy
 									:rows="6"
 									type="textarea"
 								>
@@ -98,7 +98,6 @@
 									popper-class="my-autocomplete"
 									:fetch-suggestions="querySearch"
 									placeholder="规则"
-									clearable
 									show-word-limit
 									select-when-unmatchedyy
 								>
