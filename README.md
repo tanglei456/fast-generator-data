@@ -7,9 +7,8 @@
 ## 项目特点
 - 支持MySQL、Oracle、SQLServer、PostgreSQL、达梦8、MONGO、KAFKA、API等主流数据源
 - 支持批量导入表、json导入及同步表结构等功能
-- 支持多种mock，如js、正则 、枚举、关联 等mock规则(底层采用mockjs)
+- 支持多种mock，如js、正则 、枚举、关联 等mock规则(底层采用mockjs),并且支持自定义mock规则
 - 支持测试数据关联外键
-- 支持自定义mock规则
 - 支持快速生成大数量符合规范标准的测试数据
 - 支持编写定时规则定时生成测数据,
 - 支持测试数据按照指定字段导出为excel
