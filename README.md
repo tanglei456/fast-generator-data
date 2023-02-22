@@ -1,7 +1,7 @@
 # fast-generator-data
 
 ## 项目说明
-- fast-data-generator是为了方便生成各种测试数据,支持多数据源,操作简单,非开放人员也能快速上手
+- fast-data-generator是一款基于mybatisplus+springboot+MYSQL简单易上手,操作简单,非开放人员也能快速上手，能快速生成大量测试数据,支持多数据源
 -脚手架来自gitee开源项目maku
 
 ## 项目特点
