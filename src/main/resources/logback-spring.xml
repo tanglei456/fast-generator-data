@@ -1,132 +1,239 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <contextName>logback-spring</contextName>
-
-    <!-- 指定日志输出路径 -->
-    <property name="logging.path" value="logs" />
-
-    <!-- 彩色日志依赖的渲染类 -->
-    <conversionRule conversionWord="clr" converterClass="org.springframework.boot.logging.logback.ColorConverter" />
-    <conversionRule conversionWord="wex" converterClass="org.springframework.boot.logging.logback.WhitespaceThrowableProxyConverter" />
-    <conversionRule conversionWord="wEx" converterClass="org.springframework.boot.logging.logback.ExtendedWhitespaceThrowableProxyConverter" />
-    <!-- 彩色日志格式 -->
-    <property name="CONSOLE_LOG_PATTERN" value="${CONSOLE_LOG_PATTERN:-%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}}"/>
-
-    <!--输出到控制台-->
+    <!-- 自定义类获取服务器ip  使用%ip获取方法返回的值 -->
+    <conversionRule conversionWord="ip" converterClass="jf.com.config.LogIpConfig"/>
+    <!-- 设置日志存放默认位置为配置文件中位置，防止项目中产生logDir_IS_UNDEFINED文件   -->
+    <property name="LOG_PATH" value="${LOG_PATH:- ./logs}"/>
+    <!--获取配置中的参数信息-->
+    <springProperty scope="context" name="logname" source="spring.application.name"/>
+    <springProperty scope="context" name="smtpHost" source="email.smtpHost"/>
+    <!--<springProperty scope="context" name="smtpPort" source="email.smtpPort"/>-->
+    <springProperty scope="context" name="to" source="email.to"/>
+    <springProperty scope="context" name="from" source="email.from"/>
+    <springProperty scope="context" name="username" source="email.username"/>
+    <springProperty scope="context" name="password" source="email.password"/>
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-        <!--此日志appender是为开发使用，只配置最低级别，控制台输出的日志级别是大于或等于此级别的日志信息-->
+        <target>System.out</target>
+
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="MongoDbOutput" class="jf.com.intercept.log.MongoDbAppender"/>
+
+    <appender name="FILE_ALL" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!--日志名称，如果没有File 属性，那么只会使用FileNamePattern的文件路径规则 如果同时有<File>和<FileNamePattern>，那么当天日志是<File>，明天会自动把今天的日志改名为今天的日期。即，<File> 的日志都是当天的。 -->
+        <File>${LOG_PATH}/all/${logname}.log</File>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!--文件路径,定义了日志的切分方式——把每一天的日志归档到多个文件中,满足文件最大则会再新增文件-->
+            <fileNamePattern>${LOG_PATH}/all/${logname}-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <!--只保留最近30天的日志-->
+            <maxHistory>30</maxHistory>
+            <!-- 每个文件最大存储     -->
+            <maxFileSize>100MB</maxFileSize>
+            <!--每个文件最多100MB，保留90天的历史记录，但最多10GB-->
+            <totalSizeCap>10GB</totalSizeCap>
+        </rollingPolicy>
+
+        <encoder>
+            <!-- 文件编码 -->
+            <charset>UTF-8</charset>
+            <!-- 输出格式 -->
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="FILE_INFO" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!--如果只是想要 Info 级别的日志，只是过滤 info 还是会输出 Error 日志，因为 Error 的级别高， 所以我们使用下面的策略，可以避免输出 Error 的日志-->
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <!--过滤 INFO-->
+            <level>INFO</level>
+            <!-- 匹配到就允许-->
+            <onMatch>ACCEPT</onMatch>
+            <!--没有匹配到就禁止-->
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <!--日志名称，如果没有File 属性，那么只会使用FileNamePattern的文件路径规则 如果同时有<File>和<FileNamePattern>，那么当天日志是<File>，明天会自动把今天的日志改名为今天的日期。即，<File> 的日志都是当天的。 -->
+        <File>${LOG_PATH}/info/${logname}-info.log</File>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!--文件路径,定义了日志的切分方式——把每一天的日志归档到多个文件中,满足文件最大则会再新增文件-->
+            <fileNamePattern>${LOG_PATH}/info/${logname}-info-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <!--只保留最近90天的日志-->
+            <maxHistory>90</maxHistory>
+            <!-- 每个文件最大存储     -->
+            <maxFileSize>100MB</maxFileSize>
+            <!--每个文件最多100MB，保留90天的历史记录，但最多10GB-->
+            <totalSizeCap>10GB</totalSizeCap>
+        </rollingPolicy>
+
+        <encoder>
+            <!-- 文件编码 -->
+            <charset>UTF-8</charset>
+            <!-- 输出格式 -->
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="FILE_DEBUG" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!--如果只是想要 DEBUG 级别的日志，只是过滤 DEBUG 还是会输出 INFO,Error 日志，因为 Error 的级别高， 所以我们使用下面的策略，可以避免输出  INFO,Error 的日志-->
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <!--过滤 DEBUG-->
+            <level>DEBUG</level>
+            <!--匹配到就允许-->
+            <onMatch>ACCEPT</onMatch>
+            <!--没有匹配到就禁止-->
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <!--日志名称，如果没有File 属性，那么只会使用FileNamePattern的文件路径规则 如果同时有<File>和<FileNamePattern>，那么当天日志是<File>，明天会自动把今天的日志改名为今天的日期。即，<File> 的日志都是当天的。 -->
+        <File>${LOG_PATH}/debug/${logname}-debug.log</File>
+        <!-- 根据固定窗口生成文件，此处窗口大小1到2，即2个归档文件，当总的大小超过600M时将覆盖最早的文件 -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">　　　　　　　　　　　　　　
+            <fileNamePattern>${LOG_PATH}/debug/${logname}-debug.%i.log</fileNamePattern>　　　　　　　　　　　　　　
+            <minIndex>1</minIndex>　　　　　　　　　　　　　
+            <maxIndex>2</maxIndex>　　　　　　　　　　　
+        </rollingPolicy>
+        <!-- 每个文件200M -->　　　
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">　　　　　　　　　　　　　　
+            <maxFileSize>200MB</maxFileSize>　　　　　　　　　　　　
+        </triggeringPolicy>
+        <encoder>
+            <charset>UTF-8</charset>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="FILE_ERROR" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!--如果只是想要 Error 级别的日志，那么需要过滤一下，默认是 info 级别的，ThresholdFilter-->
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>debug</level>
+            <level>Error</level>
         </filter>
+        <!--日志名称，如果没有File 属性，那么只会使用FileNamePattern的文件路径规则 如果同时有<File>和<FileNamePattern>，那么当天日志是<File>，明天会自动把今天的日志改名为今天的日期。即，<File> 的日志都是当天的。 -->
+        <File>${LOG_PATH}/error/${logname}-error.log</File>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!--文件路径,定义了日志的切分方式——把每一天的日志归档到多个文件中,满足文件最大则会再新增文件-->
+            <fileNamePattern>${LOG_PATH}/error/${logname}-error-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <!--只保留最近30天的日志-->
+            <maxHistory>30</maxHistory>
+            <!-- 每个文件最大存储     -->
+            <maxFileSize>50MB</maxFileSize>
+            <!--每个文件最多50MB，保留30天的历史记录，但最多2GB-->
+            <totalSizeCap>2GB</totalSizeCap>
+        </rollingPolicy>
         <encoder>
-            <Pattern>${CONSOLE_LOG_PATTERN}</Pattern>
             <charset>UTF-8</charset>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n</pattern>
         </encoder>
     </appender>
 
-    <!--输出到文档-->
-    <appender name="DEBUG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <!-- 正在记录的日志文档的路径及文档名 -->
-        <file>${logging.path}/debug.log</file>
-        <!--日志文档输出格式-->
-        <encoder>
+    <!--邮件发送-->
+    <appender name="EMAIL" class="ch.qos.logback.classic.net.SMTPAppender">
+        <!--smtp 服务器,发件人邮箱-->
+        <smtpHost>${smtpHost}</smtpHost>
+        <!--port-->
+        <smtpPort>25</smtpPort>
+        <!-- 发给谁的邮件列表，多个人用逗号分隔 -->
+        <to>${to}</to>
+        <!--发件人名称-->
+        <from>${from}</from>
+        <subject>【Error】- ${logname}：%ip %logger - %msg</subject>
+        <!--发件人的邮箱-->
+        <username>${username}</username>
+        <!--发件人的邮箱授权码-->
+        <password>${password}</password>
+        <SSL>false</SSL>
+        <!--是否异步-->
+        <asynchronousSending>true</asynchronousSending>
+        <layout class="ch.qos.logback.classic.PatternLayout">
             <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n</pattern>
-            <charset>UTF-8</charset>
-        </encoder>
-        <!-- 日志记录器的滚动策略，按日期，按大小记录 -->
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <!-- 日志归档 -->
-            <fileNamePattern>${logging.path}/debug-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
-            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
-                <maxFileSize>100MB</maxFileSize>
-            </timeBasedFileNamingAndTriggeringPolicy>
-            <!--日志文档保留天数-->
-            <maxHistory>30</maxHistory>
-        </rollingPolicy>
-        <!-- 此日志文档只记录debug级别的 -->
-        <filter class="ch.qos.logback.classic.filter.LevelFilter">
-            <level>debug</level>
-            <onMatch>ACCEPT</onMatch>
-            <onMismatch>DENY</onMismatch>
-        </filter>
-    </appender>
-
-    <appender name="INFO_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${logging.path}/info.log</file>
-        <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n</pattern>
-            <charset>UTF-8</charset>
-        </encoder>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${logging.path}/info-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
-            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
-                <maxFileSize>100MB</maxFileSize>
-            </timeBasedFileNamingAndTriggeringPolicy>
-            <maxHistory>30</maxHistory>
-        </rollingPolicy>
-        <filter class="ch.qos.logback.classic.filter.LevelFilter">
-            <level>info</level>
-            <onMatch>ACCEPT</onMatch>
-            <onMismatch>DENY</onMismatch>
-        </filter>
-    </appender>
-
-    <appender name="WARN_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${logging.path}/warn.log</file>
-        <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n</pattern>
-            <charset>UTF-8</charset>
-        </encoder>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${logging.path}/warn-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
-            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
-                <maxFileSize>100MB</maxFileSize>
-            </timeBasedFileNamingAndTriggeringPolicy>
-            <maxHistory>30</maxHistory>
-        </rollingPolicy>
-        <filter class="ch.qos.logback.classic.filter.LevelFilter">
-            <level>warn</level>
-            <onMatch>ACCEPT</onMatch>
-            <onMismatch>DENY</onMismatch>
-        </filter>
-    </appender>
-
-    <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${logging.path}/error.log</file>
-        <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n</pattern>
-            <charset>UTF-8</charset>
-        </encoder>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${logging.path}/error-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
-            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
-                <maxFileSize>100MB</maxFileSize>
-            </timeBasedFileNamingAndTriggeringPolicy>
-            <maxHistory>30</maxHistory>
-        </rollingPolicy>
+        </layout>
+        <cyclicBufferTracker class="ch.qos.logback.core.spi.CyclicBufferTracker">
+            <bufferSize>1</bufferSize>
+        </cyclicBufferTracker>
+        <!--过滤器-->
+        <!-- 这里采用等级过滤器 指定等级相符才发送 -->
         <filter class="ch.qos.logback.classic.filter.LevelFilter">
             <level>ERROR</level>
-            <onMatch>ACCEPT</onMatch>
+            <!--  多个过滤器此处为NEUTRAL，表示需不需要记录，还需要看后面的过滤器  -->
+            <onMatch>NEUTRAL</onMatch>
             <onMismatch>DENY</onMismatch>
+        </filter>
+        <filter class="ch.qos.logback.core.filter.EvaluatorFilter">
+            <evaluator class="ch.qos.logback.classic.boolex.JaninoEventEvaluator">
+                <expression>
+                    if(throwable==null){
+                    return true;
+                    }
+                    if(throwable.toString().contains("DevException")||throwable.toString().contains("ConstraintViolationException")){
+                    return true;
+                    }else{
+                    return false;
+                    }
+                </expression>
+            </evaluator>
+            <!--  表达式匹配时执行  -->
+            <onMatch>DENY</onMatch>
+            <onMismatch>ACCEPT</onMismatch>
         </filter>
     </appender>
 
-    <!-- 开发环境，控制台打印-->
-    <springProfile name="dev">
-        <logger name="net.data" level="DEBUG" />
-        <root level="INFO">
-            <appender-ref ref="CONSOLE" />
-        </root>
-    </springProfile>
 
-    <!-- 测试、生产环境，输出到文档 -->
-    <springProfile name="test,prod">
-        <root level="info">
-            <appender-ref ref="CONSOLE" />
-            <appender-ref ref="DEBUG_FILE" />
-            <appender-ref ref="INFO_FILE" />
-            <appender-ref ref="WARN_FILE" />
-            <appender-ref ref="ERROR_FILE" />
-        </root>
-    </springProfile>
+    <appender name="LOG_STASH" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+        <param name="Encoding" value="UTF-8"/>
+        <!-- logstash监听地址       -->
+        <destination>10.111.202.108:6666</destination>
+        <!-- 这里采用等级过滤器 指定等级相符才发送 -->
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <!--  多个过滤器此处为NEUTRAL，表示需不需要记录，还需要看后面的过滤器  -->
+            <onMatch>NEUTRAL</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <filter class="ch.qos.logback.core.filter.EvaluatorFilter">
+            <evaluator class="ch.qos.logback.classic.boolex.JaninoEventEvaluator">
+                <expression>
+                    if(throwable==null){
+                    return true;
+                    }
+                    if(throwable.toString().contains("DevException")||throwable.toString().contains("ConstraintViolationException")){
+                    return true;
+                    }else{
+                    return false;
+                    }
+                </expression>
+            </evaluator>
+            <onMatch>DENY</onMatch>
+            <onMismatch>ACCEPT</onMismatch>
+        </filter>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+
+        </encoder>
+    </appender>
+
+
+    <!-- 单独配置指定包路径的日志记录方式 -->
+    <!-- name属性为必选，指定要配置的包或类，level和additivity为可选，有缺省值 -->
+    <!-- level表示日志级别，这里配置info级别，表示info及以上级别的日志被输出 -->
+    <!-- additivity表示日志是否传递到上一级，默认为true -->
+    <!--    <logger name="jf.com" additivity="true" level="DEBUG"/>-->
+    <!--    <logger name="org.springframework.data.mongodb.core" additivity="true" level="DEBUG"/>-->
+    <logger name="javax.validation" additivity="true" level="ERROR"/>
+
+    <!-- 启用配置，添加appender    -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="MongoDbOutput"/>
+        <appender-ref ref="FILE_ALL"/>
+        <appender-ref ref="FILE_INFO"/>
+        <appender-ref ref="FILE_ERROR"/>
+        <!-- 正式环境使用logstash发送邮件 -->
+        <springProfile name="prod">
+            <appender-ref ref="LOG_STASH"/>
+        </springProfile>
+        <!-- 测试环境使用email发送邮件 -->
+        <springProfile name="func">
+            <appender-ref ref="EMAIL"/>
+        </springProfile>
+    </root>
+
 </configuration>

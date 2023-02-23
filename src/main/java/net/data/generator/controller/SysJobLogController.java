@@ -24,7 +24,7 @@ import java.util.List;
  * 
  */
 @RestController
-@RequestMapping("maku-generator/job/log")
+@RequestMapping("/job/log")
 public class SysJobLogController
 {
     @Autowired

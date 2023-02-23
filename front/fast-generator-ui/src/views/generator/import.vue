@@ -28,7 +28,7 @@
 					</el-form-item>
 					<el-form-item label="JSON" prop="file">
 						<el-input type="textarea" :rows="6" v-model="dataForm.file"> </el-input>
-						<!-- <el-upload  name="file"  v-model="dataForm.file" action="http://localhost:8088/maku-generator/gen/table/import/template" class="upload-demo" drag  multiple>
+						<!-- <el-upload  name="file"  v-model="dataForm.file" action="http://localhost:8088/fast-generator-data/gen/table/import/template" class="upload-demo" drag  multiple>
 							<el-icon class="el-icon--upload"><upload-filled /></el-icon>
 							<div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
 							<template #tip>

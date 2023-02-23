@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
  * @Date 2023/1/4 16:20
  */
 @RestController
-@RequestMapping("/maku-generator/mock/rule")
+@RequestMapping("/mock/rule")
 public class MockRuleController  {
     @Autowired
     private MockRuleService mockRuleService;

@@ -25,7 +25,7 @@ import java.util.Map;
  * 数据表管理
  */
 @RestController
-@RequestMapping("maku-generator/gen/table")
+@RequestMapping("/gen/table")
 @AllArgsConstructor
 public class TableController {
     private final TableService tableService;

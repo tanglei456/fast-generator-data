@@ -17,7 +17,7 @@ import java.util.Set;
  * @author lz love you
  */
 @RestController
-@RequestMapping("maku-generator/gen/fieldtype")
+@RequestMapping("/gen/fieldtype")
 @AllArgsConstructor
 public class FieldTypeController {
     private final FieldTypeService fieldTypeService;

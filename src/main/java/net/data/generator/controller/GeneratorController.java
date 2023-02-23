@@ -17,7 +17,7 @@ import java.util.LinkedList;
  */
 @RestController
 @Slf4j
-@RequestMapping("maku-generator/gen/generator")
+@RequestMapping("/gen/generator")
 public class GeneratorController {
     @Autowired
     private GeneratorService generatorService;

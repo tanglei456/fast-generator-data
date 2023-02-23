@@ -2,6 +2,8 @@ server:
   port: 8088
 
 spring:
+  application:
+    name: fast-generator-data
   profiles:
     active: dev
   datasource:
@@ -12,11 +14,18 @@ spring:
     password: 123456
   main:
     allow-bean-definition-overriding: true
+  mvc:
+    servlet:
+      path: /fast-generator-data
 
 
-generator:
-   data-number: 100000
+#日志文件路径
+logging:
+  file:
+    path: ./logs
+    name: ./logs/all/${spring.application.name}.log
 
+#mybatis
 mybatis-plus:
   mapper-locations: classpath:/mapper/*.xml
   typeAliasesPackage: net.data.generator.entity
@@ -33,3 +42,7 @@ mybatis-plus:
     prefix:
     blobType: BLOB
     boolValue: TRUE
+
+#测试数据生成
+generator:
+  data-number: 100000

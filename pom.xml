@@ -24,17 +24,7 @@
     </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>com.github.krraghavan</groupId>
-            <artifactId>xeger</artifactId>
-            <version>1.0.0-RELEASE</version>
-        </dependency>
-        <!--其他工具-->
-        <dependency>
-            <groupId>io.vavr</groupId>
-            <artifactId>vavr</artifactId>
-            <version>0.10.4</version>
-        </dependency>
+        <!--基础依赖-->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -51,6 +41,12 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
+        <!--日志-->
+        <dependency>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
+            <version>5.3</version>
+        </dependency>
         <!-- mybatis -->
         <dependency>
             <groupId>com.baomidou</groupId>
@@ -63,6 +59,7 @@
             <artifactId>spring-boot-starter-quartz</artifactId>
             <version>2.3.0.RELEASE</version>
         </dependency>
+        <!--工具-->
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
@@ -72,6 +69,17 @@
             <groupId>com.alibaba</groupId>
             <artifactId>fastjson</artifactId>
             <version>2.0.8</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.krraghavan</groupId>
+            <artifactId>xeger</artifactId>
+            <version>1.0.0-RELEASE</version>
+        </dependency>
+        <!--其他工具-->
+        <dependency>
+            <groupId>io.vavr</groupId>
+            <artifactId>vavr</artifactId>
+            <version>0.10.4</version>
         </dependency>
         <!--swagger-->
         <dependency>
@@ -94,6 +102,9 @@
             <artifactId>swagger-inflector</artifactId>
             <version>2.0.5</version>
         </dependency>
+
+
+        <!--数据源-->
         <dependency>
             <groupId>com.microsoft.sqlserver</groupId>
             <artifactId>mssql-jdbc</artifactId>

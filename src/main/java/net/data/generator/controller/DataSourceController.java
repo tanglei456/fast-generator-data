@@ -22,7 +22,7 @@ import java.util.List;
  */
 @Slf4j
 @RestController
-@RequestMapping("maku-generator/gen/datasource")
+@RequestMapping("/gen/datasource")
 @AllArgsConstructor
 public class DataSourceController {
     private final DataSourceService datasourceService;
