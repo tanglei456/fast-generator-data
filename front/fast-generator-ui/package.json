@@ -1,5 +1,5 @@
 {
-  "name": "maku-generator-ui",
+  "name": "fast-generator-ui",
   "version": "2.0.0",
   "scripts": {
     "dev": "vite",
