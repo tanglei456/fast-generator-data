@@ -24,7 +24,7 @@ public class DataGeneratorTask {
      */
     public void generatorData(List<Integer> tableIdList){
         Long[] tableIds = tableIdList.stream().map(i -> Long.parseLong(String.valueOf(i))).toArray(Long[]::new);
-        generatorService.batchGeneratorMockData(tableIds, false);
+        generatorService.batchGeneratorMockData(tableIds, false, true);
     }
 
 }

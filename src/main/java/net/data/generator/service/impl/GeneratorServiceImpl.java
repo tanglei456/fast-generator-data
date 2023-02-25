@@ -81,16 +81,31 @@ public class GeneratorServiceImpl implements GeneratorService {
      *
      * @param tableIds    表id数组
      * @param hasProgress 是否需要进度
+     * @param isSaveData  是否保存测试数据保存到数据源
+     * @return
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void batchGeneratorMockData(Long[] tableIds, boolean hasProgress) {
+    public Map<Long, List<Map<String, Object>>> batchGeneratorMockData(Long[] tableIds, boolean hasProgress, boolean isSaveData) {
         List<TableEntity> tableEntities = tableService.listByIds(Arrays.asList(tableIds));
         List<TableFieldEntity> tableFieldEntityList = tableFieldService.getByTableIds(tableIds);
         if (CollUtil.isEmpty(tableEntities) || CollUtil.isEmpty(tableFieldEntityList)) {
             throw new ServerException("表字段不存在!");
         }
+        Map<Long, List<Map<String, Object>>> returnMap = handleGeneratorData(hasProgress, isSaveData, tableEntities, tableFieldEntityList);
+        return returnMap;
+    }
 
+    /**
+     * 数据生成的核心逻辑
+     * @param hasProgress 进度
+     * @param isSaveData 数据保存
+     * @param tableEntities 表集合
+     * @param tableFieldEntityList 表字段集合
+     * @return
+     */
+    @NotNull
+    private Map<Long, List<Map<String, Object>>> handleGeneratorData(boolean hasProgress, boolean isSaveData, List<TableEntity> tableEntities, List<TableFieldEntity> tableFieldEntityList) {
         //<tableId,表>
         Map<Long, TableEntity> tableIdKeyTableMap = tableEntities.stream().collect(Collectors.toMap(TableEntity::getId, Function.identity()));
         //<tableId,字段集合>
@@ -109,13 +124,12 @@ public class GeneratorServiceImpl implements GeneratorService {
         foreignKeyMap.putAll(stringListMap);
 
         //初始化进度
-        String clientIP = null;
         if (hasProgress) {
-            clientIP = ServletUtil.getClientIP(ServletUtils.getRequest());
             initProgress(tableEntities);
         }
+        Map<Long,List<Map<String,Object>>> returnMap=new HashMap<>();
         for (TableEntity table : tableEntities) {
-            String finalClientIP = clientIP;
+            String clientIP = ServletUtil.getClientIP(ServletUtils.getRequest());;
             executorService.execute(() -> {
                 List<TableFieldEntity> tableFieldEntities = tableFieldMap.get(table.getId());
                 if (CollUtil.isEmpty(tableFieldEntities)) {
@@ -132,6 +146,9 @@ public class GeneratorServiceImpl implements GeneratorService {
                 //预处理需要替换入参的mock类型 如 @Js @contact
                 Map<String, List<String>> mockNameKeyMap = preHandleReferParamMockType(tableFieldEntities, table.getDatasourceId());
 
+                //需要返回的测试数据
+                List<Map<String,Object>> allTestDataList=new ArrayList<>();
+                returnMap.put(table.getId(),allTestDataList);
                 //生成的数据量,分批次生成
                 Integer dataNumber = table.getDataNumber();
                 int number = 1;
@@ -145,20 +162,25 @@ public class GeneratorServiceImpl implements GeneratorService {
                         }
                         //生成测试数据
                         List<Map<String, Object>> mapList = generatorTestData(table, template, tableFieldEntities, foreignKeyMap, mockNameKeyMap);
+
                         //保存测试数据
+                        if (isSaveData){
                             saveDataService.execute(() -> {
                                 try {
                                     commonConnectSource.batchSave(genDataSource, table.getTableName(), mapList);
                                 } catch (Exception e) {
-                                    log.error("表名:" + table.getTableName() +"生成测试数据异常", e);
-                                    throw new ServerException("保存数据库失败,失败原因:"+e.getMessage());
+                                    log.error("表名:" + table.getTableName() + "生成测试数据异常", e);
+                                    throw new ServerException("保存数据库失败,失败原因:" + e.getMessage());
                                 }
                             });
+                        }else {//不需要保存到数据源,则会保存到内存中,方便后续调用
+                            allTestDataList.addAll(mapList);
+                        }
 
                         //刷新进度
                         if (hasProgress) {
                             table.setDataNumber(dataNumber);
-                            table.setTemIp(finalClientIP);
+                            table.setTemIp(clientIP);
                             refreshProgress(table, number, startTime);
                         }
                     }
@@ -167,9 +189,13 @@ public class GeneratorServiceImpl implements GeneratorService {
             });
             log.info("表名:" + table.getTableName() + ":生成测试数据完成========数量:" + table.getDataNumber());
         }
-
+        return returnMap;
     }
 
+    /**
+     * 初始化进度
+     * @param tableEntities
+     */
     private void initProgress(List<TableEntity> tableEntities) {
         try {
             List<DataProgress> dataProgresses = dataProgressMap.get(ServletUtil.getClientIP(ServletUtils.getRequest()));
@@ -199,6 +225,12 @@ public class GeneratorServiceImpl implements GeneratorService {
         }
     }
 
+    /**
+     * 刷新进度
+     * @param table
+     * @param generatorData
+     * @param startTime
+     */
     private void refreshProgress(TableEntity table, int generatorData, long startTime) {
         try {
             List<DataProgress> dataProgresses = dataProgressMap.get(table.getTemIp());
@@ -263,7 +295,7 @@ public class GeneratorServiceImpl implements GeneratorService {
                         value = RandomValueUtil.getRandomDataByForeignKey(tableField.getForeignKey(), foreignKeyMap, randomForeignMap);
                     }
                     //枚举
-                    else if (mockName!=null&&(MockRuleEnum.getMockNameIncludeKh(mockName).equals(MockRuleEnum.MOCK_ENUM.getMockName()) &&
+                    else if (mockName != null && (MockRuleEnum.getMockNameIncludeKh(mockName).equals(MockRuleEnum.MOCK_ENUM.getMockName()) &&
                             mockName.contains("{"))) {
                         value = RandomValueUtil.getRandomDataByEnumName(mockName, fullFieldName, foreignKeyMap, randomForeignMap);
                     } else {
@@ -353,7 +385,7 @@ public class GeneratorServiceImpl implements GeneratorService {
                     for (TableFieldEntity tableFieldEntity : tableFieldEntityList) {
                         //解析js参数
                         String mockName = tableFieldEntity.getMockName();
-                        String jsonStr = mockName.substring(mockName.indexOf("{"), mockName.lastIndexOf("}")+1);
+                        String jsonStr = mockName.substring(mockName.indexOf("{"), mockName.lastIndexOf("}") + 1);
                         JSONObject jsonObject = JSONObject.parseObject(jsonStr);
                         //表示枚举定义对象
                         if (jsonStr.startsWith("{")) {
@@ -381,7 +413,7 @@ public class GeneratorServiceImpl implements GeneratorService {
 
     @NotNull
     public static String getMockTypeObjName(String mockName) {
-        return mockName.substring(mockName.indexOf("({\"" )+ 3, mockName.indexOf("\":"));
+        return mockName.substring(mockName.indexOf("({\"") + 3, mockName.indexOf("\":"));
     }
 
     /**
@@ -509,6 +541,12 @@ public class GeneratorServiceImpl implements GeneratorService {
         return foreignKeyMap;
     }
 
+    /**
+     * 遍历获取集合中的字段值
+     * @param foreignKeyName
+     * @param map
+     * @return
+     */
     @Nullable
     public static Object getForeignValue(String foreignKeyName, Map map) {
         String[] forkeys = foreignKeyName.split("\\.");
@@ -588,6 +626,27 @@ public class GeneratorServiceImpl implements GeneratorService {
         List<Map<String, Object>> mapList = generatorTestData(tableEntity, dataTemplate, fieldList, GENERATED_DATA, new HashMap<>());
         result.put(tableEntity.getTableName(), mapList);
         return result;
+    }
+
+    /**
+     * 根据测试数据生成DBF
+     *
+     * @param tableIds
+     */
+    @Override
+    public void generatorDBF(Long[] tableIds) {
+        //为了防止内存溢出,判断测试数据量是否大于50w,大于50w分批次去生成
+        this.handleGeneratorData(true,false,null,null);
+    }
+
+    /**
+     * 根据测试数据生成Excel
+     *
+     * @param tableIds
+     */
+    @Override
+    public void generatorEXCEL(Long[] tableIds) {
+
     }
 
     private void sortedTable(TableEntity tableEntity, List<TableEntity> sortedTableEntities) {
