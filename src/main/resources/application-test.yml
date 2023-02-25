@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    # MySQL
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/data_generator?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&CatalogMeansCurrent=true
+    username: root
+    password: 123456
+  main:
+    allow-bean-definition-overriding: true
+
+#测试数据生成
+generator:
+  data-number: 100000
