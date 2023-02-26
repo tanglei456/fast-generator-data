@@ -33,7 +33,7 @@ const init = (data: any) => {
 	//进度上传完成关闭连接
 	createWebSocket(global_callback)
 	//发送数据
-	sendSock('ping')
+	// sendSock('ping')
 }
 
 const showProgress = () => {

@@ -81,6 +81,28 @@
             <artifactId>vavr</artifactId>
             <version>0.10.4</version>
         </dependency>
+        <!--excel-->
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>easyexcel</artifactId>
+            <version>2.1.6</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>commons-collections4</artifactId>
+                    <groupId>org.apache.commons</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.github.albfernandez</groupId>
+            <artifactId>javadbf</artifactId>
+            <version>1.11.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-collections4</artifactId>
+            <version>4.3</version>
+        </dependency>
         <!--swagger-->
         <dependency>
             <groupId>io.springfox</groupId>

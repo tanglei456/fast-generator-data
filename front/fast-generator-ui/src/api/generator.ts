@@ -9,3 +9,13 @@ export const useDownloadApi = (tableIds: any[]) => {
 export const useGeneratorApi = (tableIds: any[]) => {
 	return service.post('/gen/generator/data', tableIds)
 }
+
+// 生成数据
+export const useGeneratorExcel = (tableIds: any[]) => {
+	return service.post('/gen/generator/excel', tableIds)
+}
+
+// 生成数据
+export const useGeneratorDbf = (tableIds: any[]) => {
+	return service.post('/gen/generator/dbf', tableIds)
+}

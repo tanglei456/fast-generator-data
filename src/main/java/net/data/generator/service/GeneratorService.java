@@ -2,6 +2,7 @@ package net.data.generator.service;
 
 import net.data.generator.entity.TableEntity;
 
+import javax.servlet.http.HttpServletResponse;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -31,13 +32,17 @@ public interface GeneratorService {
 
     /**
      * 根据测试数据生成DBF
+     *
      * @param tableIds
+     * @param response
      */
-    void generatorDBF(Long[] tableIds);
+    void generatorDBF(Long[] tableIds, HttpServletResponse response);
 
     /**
      * 根据测试数据生成Excel
+     *
      * @param tableIds
+     * @param response
      */
-    void generatorEXCEL(Long[] tableIds);
+    void generatorExcel(Long[] tableIds, HttpServletResponse response);
 }

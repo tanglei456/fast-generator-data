@@ -14,10 +14,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.Field;
 import java.net.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author tanglei
@@ -27,7 +24,7 @@ import java.util.List;
  */
 public class SocketUtils {
 
-    public static List<String> getIps(Session session) {
+    public static Set<String> getIps(Session session) {
         if (session == null) {
             return null;
         }
@@ -37,20 +34,22 @@ public class SocketUtils {
         String hostAddress = addr.getAddress().getHostAddress();
 
         if ("0:0:0:0:0:0:0:1".equals(hostAddress)||"127.0.0.1".equals(hostAddress)||"localhost".equals(hostAddress)) {
-           return getLocalNetIp();
+            Set<String> localNetIp = getLocalNetIp();
+            localNetIp.add("0:0:0:0:0:0:0:1");
+            return localNetIp;
         }
-        return Collections.singletonList(hostAddress);
+        return Collections.singleton(hostAddress);
     }
 
 
-    public static List<String> getLocalNetIp() {
+    public static Set<String> getLocalNetIp() {
         Enumeration<NetworkInterface> nifs = null;
         try {
             nifs = NetworkInterface.getNetworkInterfaces();
         } catch (SocketException e) {
             e.printStackTrace();
         }
-        List<String> ips=new ArrayList<>();
+        Set<String> ips=new HashSet<>();
         while (nifs.hasMoreElements()) {
             NetworkInterface nif = nifs.nextElement();
             Enumeration<InetAddress> address = nif.getInetAddresses();

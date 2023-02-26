@@ -17,7 +17,13 @@
 				<el-button type="primary" @click="importHandle()">表导入</el-button>
 			</el-form-item>
 			<el-form-item>
-				<el-button type="success" @click="batchGenerator()">生成数据</el-button>
+				<el-button type="success" @click="batchGenerator('1')">生成数据</el-button>
+			</el-form-item>
+			<el-form-item>
+				<el-button type="success" @click="batchGenerator('2')">生成dbf</el-button>
+			</el-form-item>
+			<el-form-item>
+				<el-button type="success" @click="batchGenerator('3')">生成excel</el-button>
 			</el-form-item>
 			<el-form-item>
 				<el-button type="danger" @click="deleteBatchHandle()">删除</el-button>
@@ -35,13 +41,15 @@
 					<a  style="color:cornflowerblue" @click="tableEditHandle(scope.row.id)">{{ scope.row.tableName }}</a>
 				</template>
 			</el-table-column>
-			<el-table-column prop="tableComment" label="表说明" header-align="center" align="center"></el-table-column>
+			<el-table-column prop="tableComment" label="表说明"  header-align="center" align="center"></el-table-column>
 			<el-table-column prop="dataNumber" label="数据量" header-align="center" align="center"></el-table-column>
 			<el-table-column label="操作" fixed="right" header-align="center" align="center" width="250">
 				<template #default="scope">
 					<el-button type="primary" link @click="editHandle(scope.row.id,scope.row.tableName)">编辑</el-button>
 					<el-button type="primary" link @click="syncHandle(scope.row)">同步</el-button>
 					<el-button type="primary" link @click="generatorData(scope.row.id)">生成数据</el-button>
+					<el-button type="primary" link @click="generatorExcel(scope.row.id)">生成excel</el-button>
+					<el-button type="primary" link @click="generatorDbf(scope.row.id)">生成dbf</el-button>
 					<el-button type="primary" link @click="deleteBatchHandle(scope.row.id)">删除</el-button>
 				</template>
 			</el-table-column>
@@ -85,7 +93,8 @@ import Import from './import.vue'
 import Edit from './edit.vue'
 import TableEdit from './tableEdit.vue'
 import MyProgress from './myProgress.vue'
-import { useGeneratorApi } from '@/api/generator'
+import fileDownload from "js-file-download";
+import { useGeneratorApi,useGeneratorExcel ,useGeneratorDbf} from '@/api/generator'
 import { useTableSyncApi } from '@/api/table'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useDownloadApi } from '@/api/generator'
@@ -171,15 +180,64 @@ const generatorData = (id?: any) => {
 		.catch(() => {})
 }
 
-const batchGenerator = () => {
+const batchGenerator = (type:string) => {
 	const tableIds = state.dataListSelections ? state.dataListSelections : []
 
 	if (tableIds.length === 0) {
 		ElMessage.warning('请选择生成数据的表')
 		return
 	}
+	if('1'===type){
+		generatorData(tableIds)
+	}
+	if('2'===type){
+		generatorDbf(tableIds)
+	}
+	if('3'===type){
+		generatorExcel(tableIds)
+	}
+}
 
-	generatorData(tableIds)
+const generatorDbf = (id?: any) => {
+
+	ElMessageBox.confirm(`确定要生成dbf吗?`, '提示', {
+		confirmButtonText: '确定',
+		cancelButtonText: '取消',
+		type: 'warning'
+	})
+		.then(() => {
+			//生成进度条
+			progressHandle(id);
+			if (!(id instanceof Array)) {
+				id = [id]
+			}
+			useGeneratorDbf(id).then((response) => {
+				fileDownload(response,'test.dbf'); 
+				ElMessage.success('执行成功')
+			})
+		})
+		.catch(() => {})
+}
+
+const generatorExcel = (id?: any) => {
+	ElMessageBox.confirm(`确定要生成excel吗?`, '提示', {
+		confirmButtonText: '确定',
+		cancelButtonText: '取消',
+		type: 'warning'
+	})
+		.then(() => {
+			//生成进度条
+			progressHandle(id);
+			if (!(id instanceof Array)) {
+				id = [id]
+			}
+			useGeneratorExcel(id).then((response) => {
+				// fileDownload(response,'test.xlsx'); 
+				ElMessage.success('执行成功')
+			})
+		})
+		.catch(() => {})
+
 }
 
 const syncHandle = (row: any) => {

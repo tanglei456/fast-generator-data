@@ -6,6 +6,7 @@ import net.data.generator.service.GeneratorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
 import java.util.LinkedList;
 
 /**
@@ -37,20 +38,18 @@ public class GeneratorController {
      * 生成DBF
      */
     @ResponseBody
-    @PostMapping("data")
-    public Result<String> generatorDBF(@RequestBody Long[] tableIds) throws Exception {
-        generatorService.generatorDBF(tableIds);
-        return Result.ok();
+    @PostMapping("dbf")
+    public void generatorDbf(@RequestBody Long[] tableIds, HttpServletResponse response) throws Exception {
+        generatorService.generatorDBF(tableIds, response);
     }
 
     /**
      * 生成测试数据EXCEL
      */
     @ResponseBody
-    @PostMapping("data")
-    public Result<String> generatorEXCEL(@RequestBody Long[] tableIds) throws Exception {
-        generatorService.generatorEXCEL(tableIds);
-        return Result.ok();
+    @PostMapping("excel")
+    public void generatorExcel(@RequestBody Long[] tableIds,HttpServletResponse response) throws Exception {
+        generatorService.generatorExcel(tableIds, response);
     }
 
 
