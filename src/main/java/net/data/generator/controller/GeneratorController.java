@@ -26,7 +26,6 @@ public class GeneratorController {
     /**
      * 生成测试数据
      */
-    @ResponseBody
     @PostMapping("data")
     public Result<String> generatorMockData(@RequestBody Long[] tableIds) throws Exception {
         generatorService.batchGeneratorMockData(tableIds, true, true);
@@ -37,18 +36,16 @@ public class GeneratorController {
     /**
      * 生成DBF
      */
-    @ResponseBody
-    @PostMapping("dbf")
-    public void generatorDbf(@RequestBody Long[] tableIds, HttpServletResponse response) throws Exception {
+    @GetMapping("dbf")
+    public void generatorDbf(@RequestParam Long[] tableIds, HttpServletResponse response) throws Exception {
         generatorService.generatorDBF(tableIds, response);
     }
 
     /**
      * 生成测试数据EXCEL
      */
-    @ResponseBody
-    @PostMapping("excel")
-    public void generatorExcel(@RequestBody Long[] tableIds,HttpServletResponse response) throws Exception {
+    @GetMapping("excel")
+    public void generatorExcel(@RequestParam Long[] tableIds, HttpServletResponse response) throws Exception {
         generatorService.generatorExcel(tableIds, response);
     }
 
@@ -56,7 +53,6 @@ public class GeneratorController {
     /**
      * 接口编排（顺序）
      */
-    @ResponseBody
     @PostMapping("/arrange")
     public Result<LinkedList> arrange(@RequestBody Long tableId) throws Exception {
         Result result = new Result();

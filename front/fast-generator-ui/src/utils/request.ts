@@ -31,6 +31,7 @@ service.interceptors.request.use(
 // 响应拦截器
 service.interceptors.response.use(
 	response => {
+	
 		if (response.status !== 200) {
 			return Promise.reject(new Error(response.statusText || 'Error'))
 		}
@@ -40,10 +41,11 @@ service.interceptors.response.use(
 		if (res.code === 0) {
 			return res
 		}
-
+		if(response.code==undefined){
+			return response
+		}
 		// 错误提示
 		ElMessage.error(res.msg)
-
 		return Promise.reject(new Error(res.msg || 'Error'))
 	},
 	error => {

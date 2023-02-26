@@ -52,9 +52,6 @@ function closeSock() {
 }
 // 数据接收
 function websocketonmessage(msg: any) {
-  // console.log("收到数据："+JSON.parse(e.data));
-  // console.log("收到数据："+msg);
-  // global_callback(JSON.parse(msg.data));
   // 收到信息为Blob类型时
   let result: any = null;
   // debugger
@@ -70,8 +67,8 @@ function websocketonmessage(msg: any) {
       global_callback(result);
     };
   } else {
+    console.log("websocket收到", msg.data);
     result = JSON.parse(msg.data);
-    console.log("websocket收到", result);
     global_callback(result);
   }
 }

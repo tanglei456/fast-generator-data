@@ -212,7 +212,6 @@ const generatorDbf = (id?: any) => {
 				id = [id]
 			}
 			useGeneratorDbf(id).then((response) => {
-				fileDownload(response,'test.dbf'); 
 				ElMessage.success('执行成功')
 			})
 		})
@@ -232,7 +231,6 @@ const generatorExcel = (id?: any) => {
 				id = [id]
 			}
 			useGeneratorExcel(id).then((response) => {
-				// fileDownload(response,'test.xlsx'); 
 				ElMessage.success('执行成功')
 			})
 		})

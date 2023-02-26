@@ -39,6 +39,12 @@ public class DataExportUtil {
      */
     public static void exportExcel( String fileName, List<Map<String,Object>> dataList,HttpServletResponse response) throws IOException {
         try {
+            if (null != response) {        //1.设置文件ContentType类型，这样设置，会自动判断下载文件类型
+                response.setContentType("application/octet-stream");
+                response.setCharacterEncoding("utf-8");
+                response.setHeader("Content-disposition", "attachment;filename=" + java.net.URLEncoder.encode(fileName + ".xlsx", "UTF-8"));
+                response.setHeader("Access-Control-Expose-Headers", "Content-disposition");
+            }
             List<Object> data = new ArrayList<>();
             //获取header
             List<List<String>> header = getHeader(dataList, data);
@@ -91,7 +97,12 @@ public class DataExportUtil {
      */
     public static void exportDbf(String fileName, List<Map<String, Object>> dataList, HttpServletResponse response) throws IOException {
         //设置请求头
-        setResponse(response, fileName);
+        if (null != response) {        //1.设置文件ContentType类型，这样设置，会自动判断下载文件类型
+            response.setContentType("application/octet-stream");
+            response.setCharacterEncoding("utf-8");
+            response.setHeader("Content-disposition", "attachment;filename=" + java.net.URLEncoder.encode(fileName + ".dbf", "UTF-8"));
+            response.setHeader("Access-Control-Expose-Headers", "Content-disposition");
+        }
         DBFField fields[] = new DBFField[dataList.get(0).keySet().size()];
 
         int i = 0;
@@ -160,13 +171,7 @@ public class DataExportUtil {
     }
 
     private static void setResponse(HttpServletResponse response, String fileName) throws UnsupportedEncodingException {
-        if (null != response) {        //1.设置文件ContentType类型，这样设置，会自动判断下载文件类型
-            response.setContentType("application/octet-stream");
-//            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-            response.setCharacterEncoding("utf-8");
-            response.setHeader("Content-disposition", "attachment;filename=" + java.net.URLEncoder.encode(fileName + ".xlsx", "UTF-8"));
-            response.setHeader("Access-Control-Expose-Headers", "Content-disposition");
-        }
+
     }
 }
 
