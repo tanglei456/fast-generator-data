@@ -19,7 +19,7 @@ public class ZipUtil {
         response.setHeader("content-type", "application/octet-stream");
         response.setContentType("application/octet-stream");
         response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=download.zip");
-        try (ZipOutputStream zipOutputStream = new ZipOutputStream(response.getOutputStream());) {
+        try (ZipOutputStream zipOutputStream = new ZipOutputStream(response.getOutputStream())) {
             for (String filePath : fileList) {
                 ZipEntry zipEntry = new ZipEntry(filePath);
                 zipOutputStream.putNextEntry(zipEntry);
@@ -30,6 +30,7 @@ public class ZipUtil {
                     zipOutputStream.write(buf, 0, len);
                     zipOutputStream.flush();
                 }
+                in.close();
             }
             zipOutputStream.flush();
         } catch (IOException e) {

@@ -43,7 +43,11 @@ public class DataExportUtil {
                 response.setHeader("Content-disposition", "attachment;filename=" + java.net.URLEncoder.encode(fileName + ".xlsx", "UTF-8"));
                 response.setHeader("Access-Control-Expose-Headers", "Content-disposition");
             }
-            IoUtil.copy(new FileInputStream(filePath),response.getOutputStream());
+            try (FileInputStream fileInputStream = new FileInputStream(filePath)){
+                IoUtil.copy(fileInputStream,response.getOutputStream());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         } catch (Exception e) {
             e.printStackTrace();
             //重置response,出错响应给浏览器页面
@@ -99,7 +103,7 @@ public class DataExportUtil {
      * @param fileName 文件名
      * @throws IOException
      */
-    public static void exportDbf(String fileName, String  filePath, HttpServletResponse response) throws IOException {
+    public static void exportDbf(String fileName, String  filePath, HttpServletResponse response) throws UnsupportedEncodingException {
         //设置请求头
         if (null != response) {        //1.设置文件ContentType类型，这样设置，会自动判断下载文件类型
             response.setContentType("application/octet-stream");
@@ -107,7 +111,11 @@ public class DataExportUtil {
             response.setHeader("Content-disposition", "attachment;filename=" + java.net.URLEncoder.encode(fileName + ".dbf", "UTF-8"));
             response.setHeader("Access-Control-Expose-Headers", "Content-disposition");
         }
-        IoUtil.copy(new FileInputStream(filePath),response.getOutputStream());
+        try (FileInputStream fileInputStream = new FileInputStream(filePath)){
+            IoUtil.copy(fileInputStream,response.getOutputStream());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private static void commonExportDbf(List<Map<String, Object>> dataList, OutputStream outputStream) throws IOException {
@@ -116,6 +124,9 @@ public class DataExportUtil {
         int i = 0;
         for (String key : dataList.get(0).keySet()) {
             fields[i] = new DBFField();
+            if (key.length()>10) {
+                key=key.substring(0,10);
+            }
             fields[i].setName(key);
             fields[i].setType(DBFDataType.CHARACTER);
             fields[i].setLength(100);
@@ -124,13 +135,17 @@ public class DataExportUtil {
 
         DBFWriter writer = new DBFWriter(outputStream);
         writer.setFields(fields);
-
-
+        writer.setCharactersetName("GBK");
         for (int j = 0; j < dataList.size(); j++) {
             Object rowData[] = new Object[i];
             int i1 = 0;
             for (String key : dataList.get(j).keySet()) {
-                rowData[i1] = dataList.get(j).get(key);
+                Object o = dataList.get(j).get(key);
+                if(o instanceof Number){
+                    rowData[i1] = String.valueOf(o);
+                }else {
+                    rowData[i1] = o;
+                }
                 i1++;
             }
             writer.addRecord(rowData);
