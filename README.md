@@ -26,10 +26,11 @@
 - 项目访问路径：http://localhost:3000/fast-generator-data
 
 ## 效果图
+![输入图片说明](images/1.1.png)
 
 ![输入图片说明](images/1.png)
 
-![输入图片说明](images/1.1.png)
+![输入图片说明](images/1.2.png)
 
 ![输入图片说明](images/2.png)
 
