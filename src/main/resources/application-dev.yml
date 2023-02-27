@@ -11,3 +11,4 @@ spring:
 #测试数据生成
 generator:
   data-number: 100000
+  temPath: D:/opt

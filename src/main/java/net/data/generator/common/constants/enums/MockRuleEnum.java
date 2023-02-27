@@ -5,10 +5,8 @@ import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.IdUtil;
-import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.serializer.SerializerFeature;
+import com.alibaba.fastjson2.JSON;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.data.generator.common.constants.DbFieldType;
@@ -75,7 +73,7 @@ public enum MockRuleEnum {
     }, Date("Date") {
         @Override
         public Object getRandomValue(Object... params) {
-            return JSON.toJSONString(RandomValueUtil.randomDate(new Date(), DateField.DAY_OF_MONTH, 1, 30), SerializerFeature.UseISO8601DateFormat);
+            return JSON.toJSONString(RandomValueUtil.randomDate(new Date(), DateField.DAY_OF_MONTH, 1, 30) );
         }
     }, BLOB("Blob") {
         @Override
@@ -423,7 +421,7 @@ public enum MockRuleEnum {
         public Object getRandomValue(Object... params) {
             String[] mockExpressionParam = MockRuleEnum.getMockExpressionParam(params);
             if (mockExpressionParam==null) {
-                return JSON.toJSONString(RandomValueUtil.randomDate(new Date(), DateField.DAY_OF_MONTH, 1, 30), SerializerFeature.UseISO8601DateFormat);
+                return JSON.toJSONString(RandomValueUtil.randomDate(new Date(), DateField.DAY_OF_MONTH, 1, 30));
             }
             String startTime = mockExpressionParam[0];
             DateTime startDate = DateUtil.parse(startTime);
@@ -438,7 +436,7 @@ public enum MockRuleEnum {
                 dateTime = RandomValueUtil.randomDate(startDate, DateField.DAY_OF_MONTH, 0, 60);
             }
 
-            return dateTime!=null?JSON.toJSONString(dateTime,SerializerFeature.UseISO8601DateFormat):null;
+            return dateTime!=null?JSON.toJSONString(dateTime):null;
         }
     };
 
@@ -531,6 +529,9 @@ public enum MockRuleEnum {
                         if(substring.matches("[\\u4E00-\\u9FA5]+")){
                             return MockRuleEnum.MOCK_CWORD.getMockName() + stringJoiner.add("1").add(substring);
                         }else{
+                            if("1".equals(substring)){
+                                return value.getMockName() + stringJoiner.add("1");
+                            }
                             return value.getMockName() + stringJoiner.add("1").add(substring);
                         }
                     }

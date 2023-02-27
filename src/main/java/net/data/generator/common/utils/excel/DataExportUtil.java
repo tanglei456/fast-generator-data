@@ -1,4 +1,4 @@
-package net.data.generator.common.utils;
+package net.data.generator.common.utils.excel;
 
 import cn.hutool.core.io.IoUtil;
 import com.alibaba.excel.EasyExcel;
@@ -17,9 +17,7 @@ import org.apache.poi.ss.usermodel.VerticalAlignment;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -33,11 +31,11 @@ public class DataExportUtil {
 
 
     /**
-     * 导出动态列excel
+     * 自适应高度导出动态列excel
      *
      * @param response response
      */
-    public static void exportExcel( String fileName, List<Map<String,Object>> dataList,HttpServletResponse response) throws IOException {
+    public static void exportExcel( String fileName, String filePath,HttpServletResponse response) throws IOException {
         try {
             if (null != response) {        //1.设置文件ContentType类型，这样设置，会自动判断下载文件类型
                 response.setContentType("application/octet-stream");
@@ -45,15 +43,7 @@ public class DataExportUtil {
                 response.setHeader("Content-disposition", "attachment;filename=" + java.net.URLEncoder.encode(fileName + ".xlsx", "UTF-8"));
                 response.setHeader("Access-Control-Expose-Headers", "Content-disposition");
             }
-            List<Object> data = new ArrayList<>();
-            //获取header
-            List<List<String>> header = getHeader(dataList, data);
-            HorizontalCellStyleStrategy strategy = commonSet(response, fileName);
-            EasyExcel.write(response.getOutputStream())
-                    .registerWriteHandler(strategy)
-                    .excelType(ExcelTypeEnum.XLSX)
-                    .head(header)
-                    .sheet("sheet1").doWrite(data);
+            IoUtil.copy(new FileInputStream(filePath),response.getOutputStream());
         } catch (Exception e) {
             e.printStackTrace();
             //重置response,出错响应给浏览器页面
@@ -68,6 +58,21 @@ public class DataExportUtil {
             response.getWriter().println(om.writeValueAsString(map));
         }
     }
+
+    private static void commonExportExcel(List<Map<String, Object>> dataList, OutputStream outputStream) throws IOException {
+        List<Object> data = new ArrayList<>();
+        //获取header
+        List<List<String>> header = getHeader(dataList, data);
+        HorizontalCellStyleStrategy strategy = commonSet();
+        EasyExcel.write(outputStream)
+                .registerWriteHandler(strategy)
+                .registerWriteHandler(new CustomCellWriteWeightConfig())
+                .registerWriteHandler(new CustomCellWriteHeightConfig())
+                .excelType(ExcelTypeEnum.XLSX)
+                .head(header)
+                .sheet("sheet1").doWrite(data);
+    }
+
     private static List<List<String>> getHeader(List<Map<String,Object>> list, List<Object> data) {
         Map<String, Object> map = list.get(0);
         //头转换
@@ -92,10 +97,9 @@ public class DataExportUtil {
      * list 生成 dbf
      *
      * @param fileName 文件名
-     * @param dataList 文件源数据
      * @throws IOException
      */
-    public static void exportDbf(String fileName, List<Map<String, Object>> dataList, HttpServletResponse response) throws IOException {
+    public static void exportDbf(String fileName, String  filePath, HttpServletResponse response) throws IOException {
         //设置请求头
         if (null != response) {        //1.设置文件ContentType类型，这样设置，会自动判断下载文件类型
             response.setContentType("application/octet-stream");
@@ -103,6 +107,10 @@ public class DataExportUtil {
             response.setHeader("Content-disposition", "attachment;filename=" + java.net.URLEncoder.encode(fileName + ".dbf", "UTF-8"));
             response.setHeader("Access-Control-Expose-Headers", "Content-disposition");
         }
+        IoUtil.copy(new FileInputStream(filePath),response.getOutputStream());
+    }
+
+    private static void commonExportDbf(List<Map<String, Object>> dataList, OutputStream outputStream) throws IOException {
         DBFField fields[] = new DBFField[dataList.get(0).keySet().size()];
 
         int i = 0;
@@ -114,7 +122,6 @@ public class DataExportUtil {
             i++;
         }
 
-        ServletOutputStream outputStream = response.getOutputStream();
         DBFWriter writer = new DBFWriter(outputStream);
         writer.setFields(fields);
 
@@ -132,8 +139,7 @@ public class DataExportUtil {
     }
 
 
-    private static HorizontalCellStyleStrategy commonSet(HttpServletResponse response, String fileName) throws UnsupportedEncodingException {
-        setResponse(response, fileName);
+    private static HorizontalCellStyleStrategy commonSet()  {
         //头的策略  样式调整
         WriteCellStyle headWriteCellStyle = new WriteCellStyle();
         //头背景设置为浅绿
@@ -170,8 +176,13 @@ public class DataExportUtil {
         return new HorizontalCellStyleStrategy(headWriteCellStyle, contentStyle);
     }
 
-    private static void setResponse(HttpServletResponse response, String fileName) throws UnsupportedEncodingException {
 
+    public static void exportExcelToTempPath(String temPath, List<Map<String, Object>> dataList) throws IOException {
+        commonExportExcel(dataList,new FileOutputStream(temPath));
+    }
+
+    public static void exportDbfToTempPath(String temPath, List<Map<String, Object>> dataList) throws IOException {
+        commonExportDbf(dataList,new FileOutputStream(temPath));
     }
 }
 

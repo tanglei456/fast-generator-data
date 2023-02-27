@@ -1,7 +1,7 @@
 package net.data.generator.datasource;
 
 import cn.hutool.core.collection.ListUtil;
-import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson2.JSONObject;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoIterable;

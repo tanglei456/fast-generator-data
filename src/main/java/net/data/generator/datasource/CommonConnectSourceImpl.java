@@ -1,6 +1,6 @@
 package net.data.generator.datasource;
 
-import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

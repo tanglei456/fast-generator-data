@@ -3,7 +3,7 @@
 		<div v-for="(item, index) in progressArrays" :key="index">
 			<div>{{ item.tableName }}</div>
 			<el-progress :percentage="item.percentage" :status="item.status" :stroke-width="8" :color="customColors" />
-			<div>{{ item.generatorNumber }} / {{ item.totalNumber }}(耗时:{{ item.useTime }}分钟)</div>
+			<div>{{ item.generatorNumber }} / {{ item.totalNumber }}(耗时:{{ item.useTime }}s)</div>
 			<el-divider />
 		</div>
 		<el-empty v-if="progressArrays==null||progressArrays.length==0"  :image-size="300" description="暂无任务" />

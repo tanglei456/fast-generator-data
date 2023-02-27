@@ -52,7 +52,7 @@ public class WebSocketServer {
             }
         }
         try {
-            sendMessage("连接成功");
+            sendMessage("\"data\":\"连接成功\"");
         } catch (IOException e) {
             log.error("网络异常!!!!!!");
         }

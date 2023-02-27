@@ -22,7 +22,7 @@ public interface GeneratorService {
      * @param isSaveData  是否保存数据到数据源
      * @return
      */
-    Map<Long, List<Map<String, Object>>> batchGeneratorMockData(Long[] tableIds, boolean hasProgress, boolean isSaveData);
+    void batchGeneratorMockData(Long[] tableIds, boolean hasProgress, boolean isSaveData);
 
     Map mockInterfaceReturnData(String tableName);
 

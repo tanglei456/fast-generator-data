@@ -2,24 +2,29 @@ package net.data.generator.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.text.StrFormatter;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.extra.servlet.ServletUtil;
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.parser.Feature;
+
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONArray;
+import com.alibaba.fastjson2.JSONObject;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.data.generator.common.config.GenDataSource;
+import net.data.generator.common.config.GeneratorSetting;
 import net.data.generator.common.config.websocket.WebSocketServer;
+import net.data.generator.common.constants.enums.GeneratorDataType;
 import net.data.generator.common.constants.enums.MockRuleEnum;
 import net.data.generator.common.exception.ServerException;
 import net.data.generator.common.page.PageResult;
 import net.data.generator.common.query.Query;
-import net.data.generator.common.utils.DataExportUtil;
+import net.data.generator.common.utils.ZipUtil;
+import net.data.generator.common.utils.excel.DataExportUtil;
 import net.data.generator.common.utils.ServletUtils;
 import net.data.generator.common.utils.TypeFormatUtil;
 import net.data.generator.common.utils.data.RandomValueUtil;
@@ -39,13 +44,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.Null;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.file.Files;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -65,7 +70,7 @@ public class GeneratorServiceImpl implements GeneratorService {
     private final DataSourceService datasourceService;
     private final TableService tableService;
     private final TableFieldService tableFieldService;
-
+    private final GeneratorSetting generatorSetting;
     public static Map<String, List<DataProgress>> dataProgressMap = new ConcurrentHashMap<>();
 
     /**
@@ -90,14 +95,13 @@ public class GeneratorServiceImpl implements GeneratorService {
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Map<Long, List<Map<String, Object>>> batchGeneratorMockData(Long[] tableIds, boolean hasProgress, boolean isSaveData) {
+    public void batchGeneratorMockData(Long[] tableIds, boolean hasProgress, boolean isSaveData) {
         List<TableEntity> tableEntities = tableService.listByIds(Arrays.asList(tableIds));
         List<TableFieldEntity> tableFieldEntityList = tableFieldService.getByTableIds(tableIds);
         if (CollUtil.isEmpty(tableEntities) || CollUtil.isEmpty(tableFieldEntityList)) {
             throw new ServerException("表字段不存在!");
         }
-        Map<Long, List<Map<String, Object>>> returnMap = handleGeneratorData(hasProgress, isSaveData, tableEntities, tableFieldEntityList);
-        return returnMap;
+        handleGeneratorData(hasProgress, GeneratorDataType.TEST_DATA, tableEntities, tableFieldEntityList);
     }
 
     /**
@@ -105,13 +109,13 @@ public class GeneratorServiceImpl implements GeneratorService {
      * 1.只有保存数据才异步,否则不异步
      *
      * @param hasProgress          进度
-     * @param isSaveData           数据保存
+     * @param type           1.数据保存 2.excel 3.dbf
      * @param tableEntities        表集合
      * @param tableFieldEntityList 表字段集合
      * @return
      */
     @NotNull
-    private Map<Long, List<Map<String, Object>>> handleGeneratorData(boolean hasProgress, boolean isSaveData, List<TableEntity> tableEntities, List<TableFieldEntity> tableFieldEntityList) {
+    private void handleGeneratorData(boolean hasProgress, String type, List<TableEntity> tableEntities, List<TableFieldEntity> tableFieldEntityList) {
         //<tableId,表>
         Map<Long, TableEntity> tableIdKeyTableMap = tableEntities.stream().collect(Collectors.toMap(TableEntity::getId, Function.identity()));
         //<tableId,字段集合>
@@ -130,30 +134,33 @@ public class GeneratorServiceImpl implements GeneratorService {
         foreignKeyMap.putAll(stringListMap);
 
         //初始化进度
+        String clientIp = null;
         if (hasProgress) {
+            clientIp = ServletUtil.getClientIP(ServletUtils.getRequest());
             initProgress(tableEntities);
         }
         Map<Long, List<Map<String, Object>>> returnMap = new HashMap<>();
+        CountDownLatch countDownLatch = new CountDownLatch(tableEntities.size());
         for (TableEntity table : tableEntities) {
-            String clientIP = ServletUtil.getClientIP(ServletUtils.getRequest());
             //保存测试数据
-            if (isSaveData) {
-                executorService.execute(() -> {
-                    generatorSingleTable(hasProgress,true, tableFieldMap, foreignKeyMap,returnMap, table, clientIP);
-                });
-            } else {//不需要保存到数据源,则会保存到内存中,方便后续调用
-                generatorSingleTable(hasProgress, false,tableFieldMap, foreignKeyMap,returnMap, table, clientIP);
-            }
+            String finalClientIp = clientIp;
+            executorService.execute(() -> {
+                generatorSingleTable(hasProgress, type, tableFieldMap, foreignKeyMap, table, finalClientIp);
+                countDownLatch.countDown();
+            });
             log.info("表名:" + table.getTableName() + ":生成测试数据完成========数量:" + table.getDataNumber());
         }
-        return returnMap;
+        try {
+            countDownLatch.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     private void generatorSingleTable(boolean hasProgress,
-                                      boolean isSave,
+                                      String type,
                                       Map<Long, List<TableFieldEntity>> tableFieldMap,
                                       Map<String, List<Map<String, Object>>> foreignKeyMap,
-                                      Map<Long,List<Map<String,Object>>> returnMap,
                                       TableEntity table,
                                       @Null String clientIP) {
         List<TableFieldEntity> tableFieldEntities = tableFieldMap.get(table.getId());
@@ -171,9 +178,7 @@ public class GeneratorServiceImpl implements GeneratorService {
         //预处理需要替换入参的mock类型 如 @Js @contact
         Map<String, List<String>> mockNameKeyMap = preHandleReferParamMockType(tableFieldEntities, table.getDatasourceId());
 
-        //需要返回的测试数据
         List<Map<String, Object>> allTestDataList = new ArrayList<>();
-        returnMap.put(table.getId(),allTestDataList);
         //生成的数据量,分批次生成
         Integer dataNumber = table.getDataNumber();
         int number = 1;
@@ -188,7 +193,8 @@ public class GeneratorServiceImpl implements GeneratorService {
                 //生成测试数据
                 List<Map<String, Object>> mapList = generatorTestData(table, template, tableFieldEntities, foreignKeyMap, mockNameKeyMap);
 
-                if (isSave){
+                //保存到数据源
+                if ("1".equals(type)) {
                     saveDataService.execute(() -> {
                         try {
                             commonConnectSource.batchSave(genDataSource, table.getTableName(), mapList);
@@ -197,7 +203,7 @@ public class GeneratorServiceImpl implements GeneratorService {
                             throw new ServerException("保存数据库失败,失败原因:" + e.getMessage());
                         }
                     });
-                }else {
+                } else {
                     allTestDataList.addAll(mapList);
                 }
 
@@ -209,6 +215,26 @@ public class GeneratorServiceImpl implements GeneratorService {
                 }
             }
             number++;
+        }
+
+        //如果type等于2或3临时保存到磁盘,方便下载
+        if (CollUtil.isNotEmpty(allTestDataList)) {
+            String temPath = generatorSetting.getTemPath();
+            if (GeneratorDataType.EXCEL.equals(type)) {
+                temPath += "/" + table.getTableComment() + ".xlsx";
+                try {
+                    DataExportUtil.exportExcelToTempPath(temPath, allTestDataList);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            } else if (GeneratorDataType.DBF.equals(type)){
+                temPath += "/" + table.getTableComment() + ".dbf";
+                try {
+                    DataExportUtil.exportDbfToTempPath(temPath, allTestDataList);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
@@ -266,7 +292,7 @@ public class GeneratorServiceImpl implements GeneratorService {
                 //修改进度
                 if (dataProgress.getTableId().equals(table.getId())) {
                     dataProgress.setPercentage(precentage)
-                            .setUseTime(String.valueOf(TimeUnit.MINUTES.convert(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS)))
+                            .setUseTime(String.valueOf(TimeUnit.SECONDS.convert(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS)))
                             .setGeneratorNumber(generatorData);
                     if (precentage == 100) {
                         dataProgress.setStatus("success");
@@ -344,7 +370,7 @@ public class GeneratorServiceImpl implements GeneratorService {
             String format = StrFormatter.format(template, testDataMap, false);
             System.out.println(format);
             System.out.println("================");
-            Map<String, Object> map = JSONObject.parseObject(format, Map.class, Feature.AllowISO8601DateFormat);
+            Map<String, Object> map = JSONObject.parseObject(format, Map.class);
             mapList.add(map);
         }
         return mapList;
@@ -676,23 +702,38 @@ public class GeneratorServiceImpl implements GeneratorService {
             throw new ServerException("表字段不存在!");
         }
 
-        Map<Long, TableEntity> tableIdKeyTableMap = tableEntities.stream().collect(Collectors.toMap(TableEntity::getId, Function.identity()));
+        this.handleGeneratorData(true, isExcel?GeneratorDataType.EXCEL:GeneratorDataType.DBF, tableEntities, tableFieldEntityList);
 
-        Map<Long, List<Map<String, Object>>> testDataMap = this.handleGeneratorData(true, false, tableEntities, tableFieldEntityList);
-        testDataMap.forEach((tableId, data) -> {
-            TableEntity tableEntity = tableIdKeyTableMap.get(tableId);
-            //作为文件名
-            String fileName = tableEntity.getTableComment();
+        List<String> pathList = tableEntities.stream().map(table -> {
+            String temPath = generatorSetting.getTemPath();
+            if (isExcel) {
+                temPath += "/" + table.getTableComment() + ".xlsx";
+            } else {
+                temPath += "/" + table.getTableComment() + ".dbf";
+            }
+            return temPath;
+        }).collect(Collectors.toList());
+        //多个文件打成压缩包导出
+        if (tableIds.length > 1) {
+            //获取临时文件路径集合,并打成压缩包导出
+            ZipUtil.downloadZip(response, pathList);
+            //删除临时目录的文件
+            pathList.forEach(FileUtil::del);
+        } else {//单个文件直接导出
+            String fileName = tableEntities.get(0).getTableComment();
             try {
                 if (isExcel) {
-                    DataExportUtil.exportExcel(fileName, data, response);
+                    DataExportUtil.exportExcel(fileName, pathList.get(0), response);
                 } else {
-                    DataExportUtil.exportDbf(fileName, data, response);
+                    DataExportUtil.exportDbf(fileName, pathList.get(0), response);
                 }
+                //删除临时目录的文件
+                pathList.forEach(FileUtil::del);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        });
+        }
+
     }
 
     /**
