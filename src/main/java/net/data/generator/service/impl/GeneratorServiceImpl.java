@@ -727,10 +727,13 @@ public class GeneratorServiceImpl implements GeneratorService {
                 } else {
                     DataExportUtil.exportDbf(fileName, pathList.get(0), response);
                 }
+                Thread.sleep(1000);
                 //删除临时目录的文件
                 pathList.forEach(FileUtil::del);
             } catch (IOException e) {
                 throw new RuntimeException(e);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
 

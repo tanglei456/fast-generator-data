@@ -4,6 +4,7 @@ import com.google.common.net.HttpHeaders;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
+import java.util.Date;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -18,7 +19,8 @@ public class ZipUtil {
     public static void downloadZip(HttpServletResponse response, List<String> fileList) {
         response.setHeader("content-type", "application/octet-stream");
         response.setContentType("application/octet-stream");
-        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=download.zip");
+        String zipName="fast-generator-data-"+DateUtils.format(new Date(),"yyyyMMddHHmmss")+".zip";
+        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename="+zipName);
         try (ZipOutputStream zipOutputStream = new ZipOutputStream(response.getOutputStream())) {
             for (String filePath : fileList) {
                 ZipEntry zipEntry = new ZipEntry(filePath);
