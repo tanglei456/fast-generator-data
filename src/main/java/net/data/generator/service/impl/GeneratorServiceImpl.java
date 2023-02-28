@@ -715,6 +715,8 @@ public class GeneratorServiceImpl implements GeneratorService {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }finally {
+            //提示垃圾jvm需要回收掉垃圾，把没有关闭的流,但是没有被引用的流关闭
+            System.gc();
             pathList.forEach(FileUtil::del);
         }
 
