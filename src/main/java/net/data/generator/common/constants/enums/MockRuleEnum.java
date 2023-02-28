@@ -9,7 +9,7 @@ import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson2.JSON;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import net.data.generator.common.constants.DbFieldType;
+import net.data.generator.common.constants.DbFieldTypeConstants;
 import net.data.generator.common.exception.ServerException;
 import net.data.generator.common.utils.data.RandomValueUtil;
 import net.data.generator.entity.TableFieldEntity;
@@ -524,7 +524,7 @@ public enum MockRuleEnum {
                 String mock = "@" + attrType;
                 if (mock.toLowerCase().equals(value.getMockName())) {
 
-                    if (StrUtil.equalsIgnoreCase(DbFieldType.STRING, attrType)) {
+                    if (StrUtil.equalsIgnoreCase(DbFieldTypeConstants.STRING, attrType)) {
                         //如果是中文 给予词组mock类型
                         if(substring.matches("[\\u4E00-\\u9FA5]+")){
                             return MockRuleEnum.MOCK_CWORD.getMockName() + stringJoiner.add("1").add(substring);

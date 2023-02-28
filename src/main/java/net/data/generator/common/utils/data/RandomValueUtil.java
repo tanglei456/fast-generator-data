@@ -15,7 +15,7 @@ import cn.hutool.script.JavaScriptEngine;
 import cn.hutool.script.ScriptUtil;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import lombok.extern.slf4j.Slf4j;
-import net.data.generator.common.constants.DbFieldType;
+import net.data.generator.common.constants.DbFieldTypeConstants;
 import net.data.generator.common.utils.TypeFormatUtil;
 import net.data.generator.common.constants.ConstantCache;
 import net.data.generator.common.constants.enums.MockRuleEnum;
@@ -1442,7 +1442,7 @@ public class RandomValueUtil extends RandomUtil {
         try {
             //如果是唯一索引,产生UUID,不重复
             if (isUniqueIndex) {
-                if (attrType.equals(DbFieldType.STRING)) {
+                if (attrType.equals(DbFieldTypeConstants.STRING)) {
                     mockName = MockRuleEnum.MOCK_UID.getMockName();
                 } else {
                     mockName = MockRuleEnum.MOCK_ID.getMockName();

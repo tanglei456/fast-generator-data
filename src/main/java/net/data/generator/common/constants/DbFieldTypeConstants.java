@@ -6,7 +6,7 @@ package net.data.generator.common.constants;
  * @Description 非关系型数据源类型
  * @Date 2023/1/5 11:05
  */
-public class DbFieldType {
+public class DbFieldTypeConstants {
     public static final String OBJECT="Object";
     public static final String STRING="String";
     public static final String ARRAYS="Arrays";

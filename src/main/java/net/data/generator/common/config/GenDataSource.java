@@ -3,7 +3,7 @@ package net.data.generator.common.config;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import net.data.generator.common.config.query.*;
-import net.data.generator.common.constants.DbType;
+import net.data.generator.common.constants.enums.DbTypeEnum;
 import net.data.generator.entity.DataSourceEntity;
 import net.data.generator.common.utils.DbUtils;
 
@@ -25,7 +25,7 @@ public class GenDataSource {
     /**
      * 数据库类型
      */
-    private DbType dbType;
+    private DbTypeEnum dbTypeEnum;
     /**
      * 数据库URL
      */
@@ -45,20 +45,20 @@ public class GenDataSource {
 
     public GenDataSource(DataSourceEntity entity) {
         this.id = entity.getId();
-        this.dbType = DbType.getDbType(entity.getDbType());
+        this.dbTypeEnum = DbTypeEnum.getDbType(entity.getDbType());
         this.connUrl = entity.getConnUrl();
         this.username = entity.getUsername();
         this.password = entity.getPassword();
 
-        if (dbType == DbType.MySQL) {
+        if (dbTypeEnum == DbTypeEnum.MySQL) {
             this.dbQuery = new MySqlQuerySql();
-        } else if (dbType == DbType.Oracle) {
+        } else if (dbTypeEnum == DbTypeEnum.Oracle) {
             this.dbQuery = new OracleQuerySql();
-        } else if (dbType == DbType.PostgreSQL) {
+        } else if (dbTypeEnum == DbTypeEnum.PostgreSQL) {
             this.dbQuery = new PostgreSqlQuerySql();
-        } else if (dbType == DbType.SQLServer) {
+        } else if (dbTypeEnum == DbTypeEnum.SQLServer) {
             this.dbQuery = new SQLServerQuerySql();
-        } else if (dbType == DbType.DM) {
+        } else if (dbTypeEnum == DbTypeEnum.DM) {
             this.dbQuery = new DmQuerySql();
         }else {
             return;
@@ -73,17 +73,17 @@ public class GenDataSource {
 
     public GenDataSource(Connection connection) throws SQLException {
         this.id = 0L;
-        this.dbType = DbType.getDbType(connection.getMetaData().getDatabaseProductName());
+        this.dbTypeEnum = DbTypeEnum.getDbType(connection.getMetaData().getDatabaseProductName());
 
-        if (dbType == DbType.MySQL) {
+        if (dbTypeEnum == DbTypeEnum.MySQL) {
             this.dbQuery = new MySqlQuerySql();
-        } else if (dbType == DbType.Oracle) {
+        } else if (dbTypeEnum == DbTypeEnum.Oracle) {
             this.dbQuery = new OracleQuerySql();
-        } else if (dbType == DbType.PostgreSQL) {
+        } else if (dbTypeEnum == DbTypeEnum.PostgreSQL) {
             this.dbQuery = new PostgreSqlQuerySql();
-        } else if (dbType == DbType.SQLServer) {
+        } else if (dbTypeEnum == DbTypeEnum.SQLServer) {
             this.dbQuery = new SQLServerQuerySql();
-        } else if (dbType == DbType.DM) {
+        } else if (dbTypeEnum == DbTypeEnum.DM) {
             this.dbQuery = new DmQuerySql();
         }
 

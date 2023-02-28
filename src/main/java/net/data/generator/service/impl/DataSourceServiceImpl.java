@@ -9,7 +9,7 @@ import net.data.generator.common.exception.ServerException;
 import net.data.generator.common.page.PageResult;
 import net.data.generator.common.query.Query;
 import net.data.generator.common.service.impl.BaseServiceImpl;
-import net.data.generator.common.constants.DbType;
+import net.data.generator.common.constants.enums.DbTypeEnum;
 import net.data.generator.common.config.GenDataSource;
 import net.data.generator.dao.DataSourceDao;
 import net.data.generator.entity.DataSourceEntity;
@@ -69,7 +69,7 @@ public class DataSourceServiceImpl extends BaseServiceImpl<DataSourceDao, DataSo
     @Override
     public String getDatabaseProductName(Long dataSourceId) {
         if (dataSourceId.intValue() == 0) {
-            return DbType.MySQL.name();
+            return DbTypeEnum.MySQL.name();
         } else {
             return getById(dataSourceId).getDbType();
         }

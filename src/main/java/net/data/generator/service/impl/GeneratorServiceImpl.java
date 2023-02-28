@@ -18,7 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.data.generator.common.config.GenDataSource;
 import net.data.generator.common.config.GeneratorSetting;
 import net.data.generator.common.config.websocket.WebSocketServer;
-import net.data.generator.common.constants.enums.GeneratorDataType;
+import net.data.generator.common.constants.GeneratorDataTypeConstants;
 import net.data.generator.common.constants.enums.MockRuleEnum;
 import net.data.generator.common.exception.ServerException;
 import net.data.generator.common.page.PageResult;
@@ -28,7 +28,7 @@ import net.data.generator.common.utils.excel.DataExportUtil;
 import net.data.generator.common.utils.ServletUtils;
 import net.data.generator.common.utils.TypeFormatUtil;
 import net.data.generator.common.utils.data.RandomValueUtil;
-import net.data.generator.common.constants.DbFieldType;
+import net.data.generator.common.constants.DbFieldTypeConstants;
 import net.data.generator.datasource.CommonConnectSource;
 import net.data.generator.entity.TableEntity;
 import net.data.generator.entity.TableFieldEntity;
@@ -170,7 +170,7 @@ public class GeneratorServiceImpl implements GeneratorService {
         long startTime = System.currentTimeMillis();
         //获取数据库连接
         GenDataSource genDataSource = datasourceService.get(table.getDatasourceId());
-        CommonConnectSource commonConnectSource = genDataSource.getDbType().connectDB(genDataSource);
+        CommonConnectSource commonConnectSource = genDataSource.getDbTypeEnum().connectDB(genDataSource);
 
         //测试数据模板
         String template = generatorDataTemplate(tableFieldEntities);
@@ -193,7 +193,7 @@ public class GeneratorServiceImpl implements GeneratorService {
                 List<Map<String, Object>> mapList = generatorTestData(table, template, tableFieldEntities, foreignKeyMap, mockNameKeyMap);
 
                 //保存到数据源
-                if (GeneratorDataType.TEST_DATA.equals(type)) {
+                if (GeneratorDataTypeConstants.TEST_DATA.equals(type)) {
                     saveDataService.execute(() -> {
                         try {
                             commonConnectSource.batchSave(genDataSource, table.getTableName(), mapList);
@@ -207,7 +207,7 @@ public class GeneratorServiceImpl implements GeneratorService {
                     allTestDataList.addAll(mapList);
                     if (allTestDataList.size() == dataNumber) {
                         String temPath = generatorSetting.getTemPath() + "/" + table.getTableComment() + "-" + DateUtils.format(new Date(), "yyMMddHHmmss");
-                        if (GeneratorDataType.EXCEL.equals(type)) {
+                        if (GeneratorDataTypeConstants.EXCEL.equals(type)) {
                             try {
                                 temPath = temPath + ".xlsx";
                                 DataExportUtil.exportExcelToTempFile(temPath, allTestDataList);
@@ -215,7 +215,7 @@ public class GeneratorServiceImpl implements GeneratorService {
                                 log.error("excel生成错误:", e);
                                 throw new ServerException("excel生成错误,错误原因:" + e.getMessage());
                             }
-                        } else if (GeneratorDataType.DBF.equals(type)) {
+                        } else if (GeneratorDataTypeConstants.DBF.equals(type)) {
                             try {
                                 temPath = temPath + ".dbf";
                                 DataExportUtil.exportDbfToTempFile(temPath, allTestDataList);
@@ -338,7 +338,7 @@ public class GeneratorServiceImpl implements GeneratorService {
             tableFieldEntities.stream().filter(item -> !isReferParamMockType(item.getMockName())).forEach(tableField -> {
                 Object value = null;
                 //除了Object和Arrays需根据规则生成测试数据
-                if (!DbFieldType.OBJECT.equals(tableField.getAttrType()) && !DbFieldType.ARRAYS.equals(tableField.getAttrType())) {
+                if (!DbFieldTypeConstants.OBJECT.equals(tableField.getAttrType()) && !DbFieldTypeConstants.ARRAYS.equals(tableField.getAttrType())) {
                     String mockName = tableField.getMockName();
                     String fullFieldName = tableField.getFullFieldName();
                     //外键
@@ -476,7 +476,7 @@ public class GeneratorServiceImpl implements GeneratorService {
         Map<String, List<String>> jsTemplateMap = new HashMap<>();
         //获取数据库连接
         GenDataSource genDataSource = datasourceService.get(datasourceId);
-        CommonConnectSource commonConnectSource = genDataSource.getDbType().connectDB(genDataSource);
+        CommonConnectSource commonConnectSource = genDataSource.getDbTypeEnum().connectDB(genDataSource);
         for (TableFieldEntity tableFieldEntity : tableFieldEntities) {
             String mockName = tableFieldEntity.getMockName();
             if (StrUtil.isBlank(mockName)) {
@@ -569,7 +569,7 @@ public class GeneratorServiceImpl implements GeneratorService {
 
             //查询外键所属表相关的数据
             Query query = new Query().setTableName(table.getTableName()).setPage(1).setLimit(1000);
-            List<JSONObject> list = genDataSource.getDbType().connectDB(genDataSource).getListByTableName(genDataSource, query);
+            List<JSONObject> list = genDataSource.getDbTypeEnum().connectDB(genDataSource).getListByTableName(genDataSource, query);
             if (CollUtil.isEmpty(list)) {
                 return;
             }
@@ -604,7 +604,7 @@ public class GeneratorServiceImpl implements GeneratorService {
         String[] forkeys = foreignKeyName.split("\\.");
         Object value = null;
         for (String forkey : forkeys) {
-            if (DbFieldType.ITEM.equals(forkey)) {
+            if (DbFieldTypeConstants.ITEM.equals(forkey)) {
                 continue;
             }
             Object temObj = map.get(forkey);
@@ -698,7 +698,7 @@ public class GeneratorServiceImpl implements GeneratorService {
      * @param isExcel
      */
     private void generatorDbfOrExcel(Long[] tableIds, boolean isExcel, HttpServletResponse response) {
-        List<String> pathList = this.batchGeneratorData(tableIds, true, isExcel ? GeneratorDataType.EXCEL : GeneratorDataType.DBF);
+        List<String> pathList = this.batchGeneratorData(tableIds, true, isExcel ? GeneratorDataTypeConstants.EXCEL : GeneratorDataTypeConstants.DBF);
         //多个文件打成压缩包导出
         if (tableIds.length > 1) {
             //获取临时文件路径集合,并打成压缩包导出

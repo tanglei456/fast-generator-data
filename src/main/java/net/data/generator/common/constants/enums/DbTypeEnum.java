@@ -1,4 +1,4 @@
-package net.data.generator.common.constants;
+package net.data.generator.common.constants.enums;
 
 import cn.hutool.core.util.StrUtil;
 import net.data.generator.common.config.GenDataSource;
@@ -9,7 +9,7 @@ import net.data.generator.datasource.*;
  *
  * @author lz love you
  */
-public enum DbType {
+public enum DbTypeEnum {
     MySQL("com.mysql.cj.jdbc.Driver"){
         @Override
         public CommonConnectSource connectDB(GenDataSource genDataSource) {
@@ -61,7 +61,7 @@ public enum DbType {
 
     private final String driverClass;
 
-    DbType(String driverClass) {
+    DbTypeEnum(String driverClass) {
         this.driverClass = driverClass;
     }
 
@@ -71,7 +71,7 @@ public enum DbType {
         return driverClass;
     }
 
-    public static DbType getDbType(String dbType) {
+    public static DbTypeEnum getDbType(String dbType) {
         if (StrUtil.equalsAny(dbType, "MySQL")) {
             return MySQL;
         }

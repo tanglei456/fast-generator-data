@@ -9,7 +9,7 @@ import net.data.generator.common.query.Query;
 import net.data.generator.common.utils.DbUtils;
 import net.data.generator.common.config.GenDataSource;
 import net.data.generator.common.config.query.AbstractQuerySql;
-import net.data.generator.common.constants.DbType;
+import net.data.generator.common.constants.enums.DbTypeEnum;
 import net.data.generator.entity.TableEntity;
 import net.data.generator.entity.TableFieldEntity;
 
@@ -100,7 +100,7 @@ public class CommonConnectSourceImpl implements CommonConnectSource {
         try {
             AbstractQuerySql query = datasource.getDbQuery();
             String tableFieldsSql = query.tableFieldsSql();
-            if (datasource.getDbType() == DbType.Oracle) {
+            if (datasource.getDbTypeEnum() == DbTypeEnum.Oracle) {
                 DatabaseMetaData md = connection.getMetaData();
                 tableFieldsSql = String.format(tableFieldsSql.replace("#schema", md.getUserName()), tableName);
             } else {

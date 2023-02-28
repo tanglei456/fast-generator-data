@@ -2,14 +2,13 @@ package net.data.generator.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ArrayUtil;
-import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import lombok.extern.slf4j.Slf4j;
 import net.data.generator.common.config.GenDataSource;
 import net.data.generator.common.config.GeneratorSetting;
-import net.data.generator.common.constants.DbFieldType;
+import net.data.generator.common.constants.DbFieldTypeConstants;
 import net.data.generator.common.exception.ServerException;
 import net.data.generator.common.page.PageResult;
 import net.data.generator.common.query.Query;
@@ -97,7 +96,7 @@ public class TableServiceImpl extends BaseServiceImpl<TableDao, TableEntity> imp
         // 初始化配置信息
         GenDataSource dataSource = dataSourceService.get(datasourceId);
         //获取数据源连接
-        CommonConnectSource connectDB = dataSource.getDbType().connectDB(dataSource);
+        CommonConnectSource connectDB = dataSource.getDbTypeEnum().connectDB(dataSource);
 
         for (String tableName : tableNameList) {
             // 查询表是否存在
@@ -148,7 +147,7 @@ public class TableServiceImpl extends BaseServiceImpl<TableDao, TableEntity> imp
         GenDataSource datasource = dataSourceService.get(table.getDatasourceId());
 
         // 从数据库获取表字段列表
-        List<TableFieldEntity> dbTableFieldList = datasource.getDbType().connectDB(datasource).getTableFieldList(datasource, table.getId(), table.getTableName());
+        List<TableFieldEntity> dbTableFieldList = datasource.getDbTypeEnum().connectDB(datasource).getTableFieldList(datasource, table.getId(), table.getTableName());
         if (dbTableFieldList.size() == 0) {
             throw new ServerException("同步失败，请检查数据库表：" + table.getTableName());
         }
@@ -231,7 +230,7 @@ public class TableServiceImpl extends BaseServiceImpl<TableDao, TableEntity> imp
         //判断字段是否为叶子节点
         for (TableFieldEntity tableField : fieldList) {
             String attrType = tableField.getAttrType();
-            if (!DbFieldType.OBJECT.equals(attrType) && !DbFieldType.ARRAYS.equals(attrType)) {
+            if (!DbFieldTypeConstants.OBJECT.equals(attrType) && !DbFieldTypeConstants.ARRAYS.equals(attrType)) {
                 tableField.setLeaf(true);
             } else {
                 tableField.setLeaf(false);
@@ -301,7 +300,7 @@ public class TableServiceImpl extends BaseServiceImpl<TableDao, TableEntity> imp
             cascaderVo.setValue(tableField.getFieldName());
             cascaderVo.setLabel(tableField.getFieldName());
             //叶子节点
-            if (!DbFieldType.OBJECT.equals(tableField.getAttrType()) && !DbFieldType.ARRAYS.equals(tableField.getAttrType())) {
+            if (!DbFieldTypeConstants.OBJECT.equals(tableField.getAttrType()) && !DbFieldTypeConstants.ARRAYS.equals(tableField.getAttrType())) {
                 cascaderVo.setLeaf(true);
             }
             return cascaderVo;

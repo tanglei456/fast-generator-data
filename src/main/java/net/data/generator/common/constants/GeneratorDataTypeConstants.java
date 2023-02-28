@@ -1,4 +1,4 @@
-package net.data.generator.common.constants.enums;
+package net.data.generator.common.constants;
 
 /**
  * @author tanglei
@@ -6,7 +6,7 @@ package net.data.generator.common.constants.enums;
  * @Description
  * @Date 2023/2/27 14:05
  */
-public class GeneratorDataType {
+public class GeneratorDataTypeConstants {
     /**
      * 测试数据
      */
