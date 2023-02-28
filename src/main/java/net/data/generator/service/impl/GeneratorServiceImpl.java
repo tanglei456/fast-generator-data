@@ -87,12 +87,12 @@ public class GeneratorServiceImpl implements GeneratorService {
      *
      * @param tableIds    表id数组
      * @param hasProgress 是否需要进度
-     * @param type  1:测试数据 2:excel 3:DBF
+     * @param type        1:测试数据 2:excel 3:DBF
      * @return
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public List<String> batchGeneratorData(Long[] tableIds, boolean hasProgress, String type ) {
+    public List<String> batchGeneratorData(Long[] tableIds, boolean hasProgress, String type) {
         List<TableEntity> tableEntities = tableService.listByIds(Arrays.asList(tableIds));
         List<TableFieldEntity> tableFieldEntityList = tableFieldService.getByTableIds(tableIds);
         if (CollUtil.isEmpty(tableEntities) || CollUtil.isEmpty(tableFieldEntityList)) {
@@ -145,6 +145,7 @@ public class GeneratorServiceImpl implements GeneratorService {
 
     /**
      * 生成单个表
+     *
      * @param hasProgress
      * @param type
      * @param tableFieldMap
@@ -192,7 +193,7 @@ public class GeneratorServiceImpl implements GeneratorService {
                 List<Map<String, Object>> mapList = generatorTestData(table, template, tableFieldEntities, foreignKeyMap, mockNameKeyMap);
 
                 //保存到数据源
-                if ("1".equals(type)) {
+                if (GeneratorDataType.TEST_DATA.equals(type)) {
                     saveDataService.execute(() -> {
                         try {
                             commonConnectSource.batchSave(genDataSource, table.getTableName(), mapList);
@@ -201,8 +202,27 @@ public class GeneratorServiceImpl implements GeneratorService {
                             throw new ServerException("保存数据库失败,失败原因:" + e.getMessage());
                         }
                     });
-                } else {
+                } else {//保存到磁盘
                     allTestDataList.addAll(mapList);
+                    if (allTestDataList.size() == dataNumber) {
+                        String temPath = generatorSetting.getTemPath()+"/" + table.getTableComment() + "-" + DateUtils.format(new Date(), "yyMMddHHmmss");
+                        if (GeneratorDataType.EXCEL.equals(type)) {
+                            try {
+                                temPath = temPath + ".xlsx";
+                                DataExportUtil.exportExcelToTempFile(temPath, allTestDataList);
+                            } catch (IOException e) {
+                                log.error("excel生成错误:",e);
+                            }
+                        } else if (GeneratorDataType.DBF.equals(type)) {
+                            try {
+                                temPath = temPath + ".dbf";
+                                DataExportUtil.exportDbfToTempFile(temPath, allTestDataList);
+                            } catch (IOException e) {
+                                log.error("dbf生成错误:",e);
+                            }
+                        }
+                        filePathList.add(temPath);
+                    }
                 }
 
                 //刷新进度
@@ -215,28 +235,6 @@ public class GeneratorServiceImpl implements GeneratorService {
             number++;
         }
 
-        //如果type等于2或3临时保存到磁盘,方便下载
-        if (CollUtil.isNotEmpty(allTestDataList)) {
-            String temPath = generatorSetting.getTemPath();
-            temPath += "/" + table.getTableComment() + "-" + DateUtils.format(new Date(), "yyMMddHHmmss");
-            if (GeneratorDataType.EXCEL.equals(type)) {
-                try {
-                    temPath += ".xlsx";
-                    DataExportUtil.exportExcelToTempPath(temPath, allTestDataList);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            } else if (GeneratorDataType.DBF.equals(type)) {
-                try {
-                    temPath += ".dbf";
-                    DataExportUtil.exportDbfToTempPath(temPath, allTestDataList);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            filePathList.add(temPath);
-
-        }
         return filePathList;
     }
 
@@ -697,7 +695,7 @@ public class GeneratorServiceImpl implements GeneratorService {
      * @param isExcel
      */
     private void generatorDbfOrExcel(Long[] tableIds, boolean isExcel, HttpServletResponse response) {
-        List<String> pathList = this.batchGeneratorData(tableIds,true, isExcel ? GeneratorDataType.EXCEL : GeneratorDataType.DBF);
+        List<String> pathList = this.batchGeneratorData(tableIds, true, isExcel ? GeneratorDataType.EXCEL : GeneratorDataType.DBF);
         //多个文件打成压缩包导出
         if (tableIds.length > 1) {
             //获取临时文件路径集合,并打成压缩包导出

@@ -2,6 +2,7 @@ package net.data.generator.common.utils.excel;
 
 import cn.hutool.core.io.IoUtil;
 import com.alibaba.excel.EasyExcel;
+import com.alibaba.excel.ExcelWriter;
 import com.alibaba.excel.support.ExcelTypeEnum;
 import com.alibaba.excel.write.metadata.style.WriteCellStyle;
 import com.alibaba.excel.write.metadata.style.WriteFont;
@@ -15,7 +16,6 @@ import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.VerticalAlignment;
 
-import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.util.*;
@@ -63,7 +63,7 @@ public class DataExportUtil {
         }
     }
 
-    private static void commonExportExcel(List<Map<String, Object>> dataList, OutputStream outputStream) throws IOException {
+    private static void commonExportExcel(List<Map<String, Object>> dataList, OutputStream outputStream)  {
         List<Object> data = new ArrayList<>();
         //获取header
         List<List<String>> header = getHeader(dataList, data);
@@ -118,7 +118,7 @@ public class DataExportUtil {
         }
     }
 
-    private static void commonExportDbf(List<Map<String, Object>> dataList, OutputStream outputStream) throws IOException {
+    public static void commonExportDbf(List<Map<String, Object>> dataList, OutputStream outputStream) throws IOException {
         DBFField fields[] = new DBFField[dataList.get(0).keySet().size()];
 
         int i = 0;
@@ -192,11 +192,11 @@ public class DataExportUtil {
     }
 
 
-    public static void exportExcelToTempPath(String temPath, List<Map<String, Object>> dataList) throws IOException {
+    public static void exportExcelToTempFile(String temPath, List<Map<String, Object>> dataList) throws IOException {
         commonExportExcel(dataList, new FileOutputStream(temPath));
     }
 
-    public static void exportDbfToTempPath(String temPath, List<Map<String, Object>> dataList) throws IOException {
+    public static void exportDbfToTempFile(String temPath, List<Map<String, Object>> dataList) throws IOException {
         commonExportDbf(dataList, new FileOutputStream(temPath));
     }
 }
