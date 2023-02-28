@@ -19,10 +19,10 @@ public interface GeneratorService {
      *
      * @param tableIds    表id
      * @param hasProgress 是否有进度
-     * @param isSaveData  是否保存数据到数据源
+     * @param type  1:测试数据 2:excel 3:DBF   {@link GeneratorDataType}
      * @return
      */
-    void batchGeneratorMockData(Long[] tableIds, boolean hasProgress, boolean isSaveData);
+    List<String> batchGeneratorData(Long[] tableIds, boolean hasProgress, String type);
 
     Map mockInterfaceReturnData(String tableName);
 

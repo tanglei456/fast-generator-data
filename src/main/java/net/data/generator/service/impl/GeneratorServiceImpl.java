@@ -3,13 +3,13 @@ package net.data.generator.service.impl;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.text.StrFormatter;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.extra.servlet.ServletUtil;
 
+import com.alibaba.excel.util.DateUtils;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
@@ -44,11 +44,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.Null;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -90,32 +87,18 @@ public class GeneratorServiceImpl implements GeneratorService {
      *
      * @param tableIds    表id数组
      * @param hasProgress 是否需要进度
-     * @param isSaveData  是否保存测试数据保存到数据源
+     * @param type  1:测试数据 2:excel 3:DBF
      * @return
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void batchGeneratorMockData(Long[] tableIds, boolean hasProgress, boolean isSaveData) {
+    public List<String> batchGeneratorData(Long[] tableIds, boolean hasProgress, String type ) {
         List<TableEntity> tableEntities = tableService.listByIds(Arrays.asList(tableIds));
         List<TableFieldEntity> tableFieldEntityList = tableFieldService.getByTableIds(tableIds);
         if (CollUtil.isEmpty(tableEntities) || CollUtil.isEmpty(tableFieldEntityList)) {
             throw new ServerException("表字段不存在!");
         }
-        handleGeneratorData(hasProgress, GeneratorDataType.TEST_DATA, tableEntities, tableFieldEntityList);
-    }
 
-    /**
-     * 数据生成的核心逻辑
-     * 1.只有保存数据才异步,否则不异步
-     *
-     * @param hasProgress          进度
-     * @param type           1.数据保存 2.excel 3.dbf
-     * @param tableEntities        表集合
-     * @param tableFieldEntityList 表字段集合
-     * @return
-     */
-    @NotNull
-    private void handleGeneratorData(boolean hasProgress, String type, List<TableEntity> tableEntities, List<TableFieldEntity> tableFieldEntityList) {
         //<tableId,表>
         Map<Long, TableEntity> tableIdKeyTableMap = tableEntities.stream().collect(Collectors.toMap(TableEntity::getId, Function.identity()));
         //<tableId,字段集合>
@@ -135,17 +118,19 @@ public class GeneratorServiceImpl implements GeneratorService {
 
         //初始化进度
         String clientIp = null;
+        List<String> filePathList = new ArrayList<>();
         if (hasProgress) {
             clientIp = ServletUtil.getClientIP(ServletUtils.getRequest());
             initProgress(tableEntities);
         }
-        Map<Long, List<Map<String, Object>>> returnMap = new HashMap<>();
+
         CountDownLatch countDownLatch = new CountDownLatch(tableEntities.size());
         for (TableEntity table : tableEntities) {
             //保存测试数据
             String finalClientIp = clientIp;
             executorService.execute(() -> {
-                generatorSingleTable(hasProgress, type, tableFieldMap, foreignKeyMap, table, finalClientIp);
+                List<String> filePaths = generatorSingleTable(hasProgress, type, tableFieldMap, foreignKeyMap, table, finalClientIp);
+                filePathList.addAll(filePaths);
                 countDownLatch.countDown();
             });
             log.info("表名:" + table.getTableName() + ":生成测试数据完成========数量:" + table.getDataNumber());
@@ -155,18 +140,31 @@ public class GeneratorServiceImpl implements GeneratorService {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        return filePathList;
     }
 
-    private void generatorSingleTable(boolean hasProgress,
-                                      String type,
-                                      Map<Long, List<TableFieldEntity>> tableFieldMap,
-                                      Map<String, List<Map<String, Object>>> foreignKeyMap,
-                                      TableEntity table,
-                                      @Null String clientIP) {
+    /**
+     * 生成单个表
+     * @param hasProgress
+     * @param type
+     * @param tableFieldMap
+     * @param foreignKeyMap
+     * @param table
+     * @param clientIP
+     * @return
+     */
+    private List<String> generatorSingleTable(boolean hasProgress,
+                                              String type,
+                                              Map<Long, List<TableFieldEntity>> tableFieldMap,
+                                              Map<String, List<Map<String, Object>>> foreignKeyMap,
+                                              TableEntity table,
+                                              @Null String clientIP) {
         List<TableFieldEntity> tableFieldEntities = tableFieldMap.get(table.getId());
+        List<String> filePathList = new ArrayList<>();
         if (CollUtil.isEmpty(tableFieldEntities)) {
-            return;
+            return filePathList;
         }
+
         //记录开始时间
         long startTime = System.currentTimeMillis();
         //获取数据库连接
@@ -220,22 +218,26 @@ public class GeneratorServiceImpl implements GeneratorService {
         //如果type等于2或3临时保存到磁盘,方便下载
         if (CollUtil.isNotEmpty(allTestDataList)) {
             String temPath = generatorSetting.getTemPath();
+            temPath += "/" + table.getTableComment() + "-" + DateUtils.format(new Date(), "yyMMddHHmmss");
             if (GeneratorDataType.EXCEL.equals(type)) {
-                temPath += "/" + table.getTableComment() + ".xlsx";
                 try {
+                    temPath += ".xlsx";
                     DataExportUtil.exportExcelToTempPath(temPath, allTestDataList);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-            } else if (GeneratorDataType.DBF.equals(type)){
-                temPath += "/" + table.getTableComment() + ".dbf";
+            } else if (GeneratorDataType.DBF.equals(type)) {
                 try {
+                    temPath += ".dbf";
                     DataExportUtil.exportDbfToTempPath(temPath, allTestDataList);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
+            filePathList.add(temPath);
+
         }
+        return filePathList;
     }
 
     /**
@@ -695,24 +697,7 @@ public class GeneratorServiceImpl implements GeneratorService {
      * @param isExcel
      */
     private void generatorDbfOrExcel(Long[] tableIds, boolean isExcel, HttpServletResponse response) {
-        //为了防止内存溢出,判断测试数据量是否大于50w,大于50w分批次去生成
-        List<TableEntity> tableEntities = tableService.listByIds(Arrays.asList(tableIds));
-        List<TableFieldEntity> tableFieldEntityList = tableFieldService.getByTableIds(tableIds);
-        if (CollUtil.isEmpty(tableEntities) || CollUtil.isEmpty(tableFieldEntityList)) {
-            throw new ServerException("表字段不存在!");
-        }
-
-        this.handleGeneratorData(true, isExcel?GeneratorDataType.EXCEL:GeneratorDataType.DBF, tableEntities, tableFieldEntityList);
-
-        List<String> pathList = tableEntities.stream().map(table -> {
-            String temPath = generatorSetting.getTemPath();
-            if (isExcel) {
-                temPath += "/" + table.getTableComment() + ".xlsx";
-            } else {
-                temPath += "/" + table.getTableComment() + ".dbf";
-            }
-            return temPath;
-        }).collect(Collectors.toList());
+        List<String> pathList = this.batchGeneratorData(tableIds,true, isExcel ? GeneratorDataType.EXCEL : GeneratorDataType.DBF);
         //多个文件打成压缩包导出
         if (tableIds.length > 1) {
             //获取临时文件路径集合,并打成压缩包导出
@@ -720,12 +705,11 @@ public class GeneratorServiceImpl implements GeneratorService {
             //删除临时目录的文件
             pathList.forEach(FileUtil::del);
         } else {//单个文件直接导出
-            String fileName = tableEntities.get(0).getTableComment();
             try {
                 if (isExcel) {
-                    DataExportUtil.exportExcel(fileName, pathList.get(0), response);
+                    DataExportUtil.exportExcel(pathList.get(0), response);
                 } else {
-                    DataExportUtil.exportDbf(fileName, pathList.get(0), response);
+                    DataExportUtil.exportDbf(pathList.get(0), response);
                 }
                 Thread.sleep(1000);
                 //删除临时目录的文件

@@ -1,5 +1,6 @@
 package net.data.generator.task;
 
+import net.data.generator.common.constants.enums.GeneratorDataType;
 import net.data.generator.service.GeneratorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -24,7 +25,7 @@ public class DataGeneratorTask {
      */
     public void generatorData(List<Integer> tableIdList){
         Long[] tableIds = tableIdList.stream().map(i -> Long.parseLong(String.valueOf(i))).toArray(Long[]::new);
-        generatorService.batchGeneratorMockData(tableIds, false, true);
+        generatorService.batchGeneratorData(tableIds, false, GeneratorDataType.TEST_DATA);
     }
 
 }

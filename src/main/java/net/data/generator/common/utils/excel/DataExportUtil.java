@@ -35,16 +35,16 @@ public class DataExportUtil {
      *
      * @param response response
      */
-    public static void exportExcel( String fileName, String filePath,HttpServletResponse response) throws IOException {
+    public static void exportExcel(String filePath, HttpServletResponse response) throws IOException {
         try {
-            if (null != response) {        //1.设置文件ContentType类型，这样设置，会自动判断下载文件类型
-                response.setContentType("application/octet-stream");
-                response.setCharacterEncoding("utf-8");
-                response.setHeader("Content-disposition", "attachment;filename=" + java.net.URLEncoder.encode(fileName + ".xlsx", "UTF-8"));
-                response.setHeader("Access-Control-Expose-Headers", "Content-disposition");
-            }
-            try (FileInputStream fileInputStream = new FileInputStream(filePath)){
-                IoUtil.copy(fileInputStream,response.getOutputStream());
+            //1.设置文件ContentType类型，这样设置，会自动判断下载文件类型
+            String fileName = filePath.substring(filePath.lastIndexOf("/") + 1);
+            response.setContentType("application/octet-stream");
+            response.setCharacterEncoding("utf-8");
+            response.setHeader("Content-disposition", "attachment;filename=" + java.net.URLEncoder.encode(fileName , "UTF-8"));
+            response.setHeader("Access-Control-Expose-Headers", "Content-disposition");
+            try (FileInputStream fileInputStream = new FileInputStream(filePath)) {
+                IoUtil.copy(fileInputStream, response.getOutputStream());
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -77,11 +77,11 @@ public class DataExportUtil {
                 .sheet("sheet1").doWrite(data);
     }
 
-    private static List<List<String>> getHeader(List<Map<String,Object>> list, List<Object> data) {
+    private static List<List<String>> getHeader(List<Map<String, Object>> list, List<Object> data) {
         Map<String, Object> map = list.get(0);
         //头转换
         Set<String> keys = map.keySet();
-        List<List<String>> header=keys.stream().map(key->Collections.singletonList(key)).collect(Collectors.toList());
+        List<List<String>> header = keys.stream().map(key -> Collections.singletonList(key)).collect(Collectors.toList());
 
         //数据行
         for (Map<String, Object> objectMap : list) {
@@ -100,19 +100,19 @@ public class DataExportUtil {
     /**
      * list 生成 dbf
      *
-     * @param fileName 文件名
+     * @param filePath 文件路径
      * @throws IOException
      */
-    public static void exportDbf(String fileName, String  filePath, HttpServletResponse response) throws UnsupportedEncodingException {
+    public static void exportDbf(String filePath, HttpServletResponse response) throws UnsupportedEncodingException {
+        String fileName = filePath.substring(filePath.lastIndexOf("/") + 1);
         //设置请求头
-        if (null != response) {        //1.设置文件ContentType类型，这样设置，会自动判断下载文件类型
-            response.setContentType("application/octet-stream");
-            response.setCharacterEncoding("utf-8");
-            response.setHeader("Content-disposition", "attachment;filename=" + java.net.URLEncoder.encode(fileName + ".dbf", "UTF-8"));
-            response.setHeader("Access-Control-Expose-Headers", "Content-disposition");
-        }
-        try (FileInputStream fileInputStream = new FileInputStream(filePath)){
-            IoUtil.copy(fileInputStream,response.getOutputStream());
+        //1.设置文件ContentType类型，这样设置，会自动判断下载文件类型
+        response.setContentType("application/octet-stream");
+        response.setCharacterEncoding("utf-8");
+        response.setHeader("Content-disposition", "attachment;filename=" + java.net.URLEncoder.encode(fileName + ".dbf", "UTF-8"));
+        response.setHeader("Access-Control-Expose-Headers", "Content-disposition");
+        try (FileInputStream fileInputStream = new FileInputStream(filePath)) {
+            IoUtil.copy(fileInputStream, response.getOutputStream());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -124,8 +124,8 @@ public class DataExportUtil {
         int i = 0;
         for (String key : dataList.get(0).keySet()) {
             fields[i] = new DBFField();
-            if (key.length()>10) {
-                key=key.substring(0,10);
+            if (key.length() > 10) {
+                key = key.substring(0, 10);
             }
             fields[i].setName(key);
             fields[i].setType(DBFDataType.CHARACTER);
@@ -141,9 +141,9 @@ public class DataExportUtil {
             int i1 = 0;
             for (String key : dataList.get(j).keySet()) {
                 Object o = dataList.get(j).get(key);
-                if(o instanceof Number){
+                if (o instanceof Number) {
                     rowData[i1] = String.valueOf(o);
-                }else {
+                } else {
                     rowData[i1] = o;
                 }
                 i1++;
@@ -154,7 +154,7 @@ public class DataExportUtil {
     }
 
 
-    private static HorizontalCellStyleStrategy commonSet()  {
+    private static HorizontalCellStyleStrategy commonSet() {
         //头的策略  样式调整
         WriteCellStyle headWriteCellStyle = new WriteCellStyle();
         //头背景设置为浅绿
@@ -193,11 +193,11 @@ public class DataExportUtil {
 
 
     public static void exportExcelToTempPath(String temPath, List<Map<String, Object>> dataList) throws IOException {
-        commonExportExcel(dataList,new FileOutputStream(temPath));
+        commonExportExcel(dataList, new FileOutputStream(temPath));
     }
 
     public static void exportDbfToTempPath(String temPath, List<Map<String, Object>> dataList) throws IOException {
-        commonExportDbf(dataList,new FileOutputStream(temPath));
+        commonExportDbf(dataList, new FileOutputStream(temPath));
     }
 }
 

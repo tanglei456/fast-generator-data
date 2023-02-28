@@ -1,6 +1,7 @@
 package net.data.generator.controller;
 
 import lombok.extern.slf4j.Slf4j;
+import net.data.generator.common.constants.enums.GeneratorDataType;
 import net.data.generator.common.utils.Result;
 import net.data.generator.service.GeneratorService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,8 +28,8 @@ public class GeneratorController {
      * 生成测试数据
      */
     @PostMapping("data")
-    public Result<String> generatorMockData(@RequestBody Long[] tableIds) throws Exception {
-        generatorService.batchGeneratorMockData(tableIds, true, true);
+    public Result<String> generatorData(@RequestBody Long[] tableIds) throws Exception {
+        generatorService.batchGeneratorData(tableIds,true, GeneratorDataType.TEST_DATA);
         return Result.ok();
     }
 
