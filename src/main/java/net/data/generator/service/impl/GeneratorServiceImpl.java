@@ -205,20 +205,20 @@ public class GeneratorServiceImpl implements GeneratorService {
                 } else {//保存到磁盘
                     allTestDataList.addAll(mapList);
                     if (allTestDataList.size() == dataNumber) {
-                        String temPath = generatorSetting.getTemPath()+"/" + table.getTableComment() + "-" + DateUtils.format(new Date(), "yyMMddHHmmss");
+                        String temPath = generatorSetting.getTemPath() + "/" + table.getTableComment() + "-" + DateUtils.format(new Date(), "yyMMddHHmmss");
                         if (GeneratorDataType.EXCEL.equals(type)) {
                             try {
                                 temPath = temPath + ".xlsx";
                                 DataExportUtil.exportExcelToTempFile(temPath, allTestDataList);
                             } catch (IOException e) {
-                                log.error("excel生成错误:",e);
+                                log.error("excel生成错误:", e);
                             }
                         } else if (GeneratorDataType.DBF.equals(type)) {
                             try {
                                 temPath = temPath + ".dbf";
                                 DataExportUtil.exportDbfToTempFile(temPath, allTestDataList);
                             } catch (IOException e) {
-                                log.error("dbf生成错误:",e);
+                                log.error("dbf生成错误:", e);
                             }
                         }
                         filePathList.add(temPath);
@@ -700,23 +700,22 @@ public class GeneratorServiceImpl implements GeneratorService {
         if (tableIds.length > 1) {
             //获取临时文件路径集合,并打成压缩包导出
             ZipUtil.downloadZip(response, pathList);
-            //删除临时目录的文件
-            pathList.forEach(FileUtil::del);
         } else {//单个文件直接导出
             try {
-                if (isExcel) {
-                    DataExportUtil.exportExcel(pathList.get(0), response);
-                } else {
-                    DataExportUtil.exportDbf(pathList.get(0), response);
-                }
-                Thread.sleep(1000);
-                //删除临时目录的文件
-                pathList.forEach(FileUtil::del);
+                DataExportUtil.exportExcelOrDbf(pathList.get(0), response);
             } catch (IOException e) {
-                throw new RuntimeException(e);
-            } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+        }
+
+        //删除临时目录的文件
+        try {
+            Thread.sleep(1000);
+            pathList.forEach(FileUtil::del);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }finally {
+            pathList.forEach(FileUtil::del);
         }
 
     }

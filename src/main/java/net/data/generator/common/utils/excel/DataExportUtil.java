@@ -31,11 +31,11 @@ public class DataExportUtil {
 
 
     /**
-     * 自适应高度导出动态列excel
+     * 导出dbf或者dbf
      *
      * @param response response
      */
-    public static void exportExcel(String filePath, HttpServletResponse response) throws IOException {
+    public static void exportExcelOrDbf(String filePath, HttpServletResponse response) throws IOException {
         try {
             //1.设置文件ContentType类型，这样设置，会自动判断下载文件类型
             String fileName = filePath.substring(filePath.lastIndexOf("/") + 1);
@@ -94,29 +94,8 @@ public class DataExportUtil {
         return header;
     }
 
-    /**
-     * 导出dbf
-     */
-    /**
-     * list 生成 dbf
-     *
-     * @param filePath 文件路径
-     * @throws IOException
-     */
-    public static void exportDbf(String filePath, HttpServletResponse response) throws UnsupportedEncodingException {
-        String fileName = filePath.substring(filePath.lastIndexOf("/") + 1);
-        //设置请求头
-        //1.设置文件ContentType类型，这样设置，会自动判断下载文件类型
-        response.setContentType("application/octet-stream");
-        response.setCharacterEncoding("utf-8");
-        response.setHeader("Content-disposition", "attachment;filename=" + java.net.URLEncoder.encode(fileName + ".dbf", "UTF-8"));
-        response.setHeader("Access-Control-Expose-Headers", "Content-disposition");
-        try (FileInputStream fileInputStream = new FileInputStream(filePath)) {
-            IoUtil.copy(fileInputStream, response.getOutputStream());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+
+
 
     public static void commonExportDbf(List<Map<String, Object>> dataList, OutputStream outputStream) throws IOException {
         DBFField fields[] = new DBFField[dataList.get(0).keySet().size()];
