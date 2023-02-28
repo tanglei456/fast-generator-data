@@ -202,7 +202,8 @@ public class GeneratorServiceImpl implements GeneratorService {
                             throw new ServerException("保存数据库失败,失败原因:" + e.getMessage());
                         }
                     });
-                } else {//保存到磁盘
+                    //保存到磁盘
+                } else {
                     allTestDataList.addAll(mapList);
                     if (allTestDataList.size() == dataNumber) {
                         String temPath = generatorSetting.getTemPath() + "/" + table.getTableComment() + "-" + DateUtils.format(new Date(), "yyMMddHHmmss");
@@ -212,6 +213,7 @@ public class GeneratorServiceImpl implements GeneratorService {
                                 DataExportUtil.exportExcelToTempFile(temPath, allTestDataList);
                             } catch (IOException e) {
                                 log.error("excel生成错误:", e);
+                                throw new ServerException("excel生成错误,错误原因:" + e.getMessage());
                             }
                         } else if (GeneratorDataType.DBF.equals(type)) {
                             try {
@@ -219,6 +221,7 @@ public class GeneratorServiceImpl implements GeneratorService {
                                 DataExportUtil.exportDbfToTempFile(temPath, allTestDataList);
                             } catch (IOException e) {
                                 log.error("dbf生成错误:", e);
+                                throw new ServerException("dbf生成错误,错误原因" + e.getMessage());
                             }
                         }
                         filePathList.add(temPath);
@@ -714,7 +717,7 @@ public class GeneratorServiceImpl implements GeneratorService {
             pathList.forEach(FileUtil::del);
         } catch (InterruptedException e) {
             e.printStackTrace();
-        }finally {
+        } finally {
             //提示垃圾jvm需要回收掉垃圾，把没有关闭的流,但是没有被引用的流关闭
             System.gc();
             pathList.forEach(FileUtil::del);
