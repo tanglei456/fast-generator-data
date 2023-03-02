@@ -76,9 +76,9 @@ public class GeneratorServiceImpl implements GeneratorService {
     public static Map<String, List<DataProgress>> dataProgressMap = new ConcurrentHashMap<>();
 
     /**
-     * 创建一个数据生成线程 4的线程池
+     * 创建一个数据生成线程线程池
      */
-    public final static ExecutorService executorService = Executors.newFixedThreadPool(4);
+    public final static ExecutorService executorService = Executors.newWorkStealingPool();
 
 
     public final static HashMap<String, List<Map<String, Object>>> GENERATED_DATA = new HashMap<>();
@@ -123,15 +123,12 @@ public class GeneratorServiceImpl implements GeneratorService {
             initProgress(tableEntities);
         }
 
+
+        //获取cpu核心数
+        int threadNumber = Runtime.getRuntime().availableProcessors();
+        int parties = BigDecimal.valueOf(tableEntities.size()).divide(BigDecimal.valueOf(threadNumber), RoundingMode.UP).intValue();
         //给线程分配任务
-        List<List<TableEntity>> partitions = new ArrayList<>();
-        int parties = 4;
-        if (tableEntities.size() <= 4) {
-            parties = tableEntities.size();
-            partitions = Lists.partition(tableEntities, 1);
-        } else {
-            partitions = Lists.partition(tableEntities, BigDecimal.valueOf(tableEntities.size()).divide(BigDecimal.valueOf(4), RoundingMode.UP).intValue());
-        }
+        List<List<TableEntity>> partitions = Lists.partition(tableEntities, parties);
 
         List<String> filePathList = new ArrayList<>();
         //雪花算法,唯一id
@@ -152,7 +149,7 @@ public class GeneratorServiceImpl implements GeneratorService {
 
         for (List<TableEntity> tables : partitions) {
             //保存测试数据
-            executorService.execute(() -> {
+            executorService.submit(() -> {
                 for (TableEntity table : tables) {
                     List<String> filePaths = generatorSingleTable(hasProgress, type, tableFieldMap, foreignKeyMap, table, clientIp);
                     filePathList.addAll(filePaths);
@@ -217,12 +214,12 @@ public class GeneratorServiceImpl implements GeneratorService {
                 List<Map<String, Object>> mapList = generatorTestData(table, template, tableFieldEntities, foreignKeyMap, mockNameKeyMap);
                 //保存到数据源
                 if (GeneratorDataTypeConstants.TEST_DATA.equals(type)) {
-                        try {
-                            commonConnectSource.batchSave(genDataSource, table.getTableName(), mapList);
-                        } catch (Exception e) {
-                            log.error("表名:" + table.getTableName() + "生成测试数据异常", e);
-                            throw new ServerException("保存数据库失败,失败原因:" + e.getMessage());
-                        }
+                    try {
+                        commonConnectSource.batchSave(genDataSource, table.getTableName(), mapList);
+                    } catch (Exception e) {
+                        log.error("表名:" + table.getTableName() + "生成测试数据异常", e);
+                        throw new ServerException("保存数据库失败,失败原因:" + e.getMessage());
+                    }
                     //保存到磁盘
                 } else {
                     allTestDataList.addAll(mapList);
