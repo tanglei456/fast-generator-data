@@ -136,6 +136,8 @@ public class GeneratorServiceImpl implements GeneratorService {
         } else {
             partitions = Lists.partition(tableEntities, BigDecimal.valueOf(tableEntities.size()).divide(BigDecimal.valueOf(4), RoundingMode.UP).intValue());
         }
+
+        List<String> filePathList = new ArrayList<>();
         //雪花算法,唯一id
         String batchNumber = IdUtil.getSnowflakeNextIdStr();
         //如果属于excel和dbf类型
@@ -145,14 +147,13 @@ public class GeneratorServiceImpl implements GeneratorService {
             try {
                 if (!GeneratorDataTypeConstants.TEST_DATA.equals(type)) {
                     webSocketServer.sendMessage(JSON.toJSONString(Result.ok(batchNumber)));
+                    FILE_PATH_MAP.put(batchNumber, filePathList);
                 }
             } catch (IOException e) {
                 e.printStackTrace();
             }
         });
 
-        List<String> filePathList = new ArrayList<>();
-        FILE_PATH_MAP.put(batchNumber, filePathList);
         for (List<TableEntity> tables : partitions) {
             //保存测试数据
             executorService.execute(() -> {
