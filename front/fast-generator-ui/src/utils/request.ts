@@ -41,7 +41,7 @@ service.interceptors.response.use(
 		if (res.code === 0) {
 			return res
 		}
-		if(response.code==undefined){
+		if(res.code==undefined){
 			return response
 		}
 		// 错误提示

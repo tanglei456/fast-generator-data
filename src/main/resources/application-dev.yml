@@ -11,4 +11,5 @@ spring:
 #测试数据生成
 generator:
   data-number: 100000
+  # excel、dbf临时存放路径
   temPath: D:/opt

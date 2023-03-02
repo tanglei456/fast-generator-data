@@ -4,31 +4,33 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.text.StrFormatter;
+import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.extra.servlet.ServletUtil;
-
 import com.alibaba.excel.util.DateUtils;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
+import com.google.common.collect.Lists;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.data.generator.common.config.GenDataSource;
 import net.data.generator.common.config.GeneratorSetting;
 import net.data.generator.common.config.websocket.WebSocketServer;
+import net.data.generator.common.constants.DbFieldTypeConstants;
 import net.data.generator.common.constants.GeneratorDataTypeConstants;
 import net.data.generator.common.constants.enums.MockRuleEnum;
 import net.data.generator.common.exception.ServerException;
 import net.data.generator.common.page.PageResult;
 import net.data.generator.common.query.Query;
-import net.data.generator.common.utils.ZipUtil;
-import net.data.generator.common.utils.excel.DataExportUtil;
+import net.data.generator.common.utils.Result;
 import net.data.generator.common.utils.ServletUtils;
 import net.data.generator.common.utils.TypeFormatUtil;
+import net.data.generator.common.utils.ZipUtil;
 import net.data.generator.common.utils.data.RandomValueUtil;
-import net.data.generator.common.constants.DbFieldTypeConstants;
+import net.data.generator.common.utils.excel.DataExportUtil;
 import net.data.generator.datasource.CommonConnectSource;
 import net.data.generator.entity.TableEntity;
 import net.data.generator.entity.TableFieldEntity;
@@ -46,6 +48,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.Null;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -53,6 +56,8 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static net.data.generator.common.constants.ConstantCache.FILE_PATH_MAP;
 
 
 /**
@@ -71,7 +76,7 @@ public class GeneratorServiceImpl implements GeneratorService {
     public static Map<String, List<DataProgress>> dataProgressMap = new ConcurrentHashMap<>();
 
     /**
-     * 创建一个数据生成线程 3的线程池
+     * 创建一个数据生成线程 4的线程池
      */
     private final ExecutorService executorService = Executors.newFixedThreadPool(4);
 
@@ -92,7 +97,7 @@ public class GeneratorServiceImpl implements GeneratorService {
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public List<String> batchGeneratorData(Long[] tableIds, boolean hasProgress, String type) {
+    public void batchGeneratorData(Long[] tableIds, boolean hasProgress, String type) {
         List<TableEntity> tableEntities = tableService.listByIds(Arrays.asList(tableIds));
         List<TableFieldEntity> tableFieldEntityList = tableFieldService.getByTableIds(tableIds);
         if (CollUtil.isEmpty(tableEntities) || CollUtil.isEmpty(tableFieldEntityList)) {
@@ -117,30 +122,52 @@ public class GeneratorServiceImpl implements GeneratorService {
         foreignKeyMap.putAll(stringListMap);
 
         //初始化进度
-        String clientIp = null;
-        List<String> filePathList = new ArrayList<>();
+        String clientIp = ServletUtil.getClientIP(ServletUtils.getRequest());
         if (hasProgress) {
-            clientIp = ServletUtil.getClientIP(ServletUtils.getRequest());
             initProgress(tableEntities);
         }
 
-        CountDownLatch countDownLatch = new CountDownLatch(tableEntities.size());
-        for (TableEntity table : tableEntities) {
+        //给线程分配任务
+        List<List<TableEntity>> partitions = new ArrayList<>();
+        int parties = 4;
+        if (tableEntities.size() <= 4) {
+            parties = tableEntities.size();
+            partitions.add(tableEntities);
+        } else {
+            partitions = Lists.partition(tableEntities, BigDecimal.valueOf(tableEntities.size()).divide(BigDecimal.valueOf(4), RoundingMode.UP).intValue());
+        }
+        //雪花算法,唯一id
+        String batchNumber = IdUtil.getSnowflakeNextIdStr();
+        //如果属于excel和dbf类型
+        //等子线程执行完,就发出通知，告诉客户端我已经生成完数据了。
+        CyclicBarrier cyclicBarrier = new CyclicBarrier(parties, () -> {
+            WebSocketServer webSocketServer = WebSocketServer.webSocketMap.get(clientIp);
+            try {
+                if (!GeneratorDataTypeConstants.TEST_DATA.equals(type)) {
+                    webSocketServer.sendMessage(JSON.toJSONString(Result.ok(batchNumber)));
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+
+        List<String> filePathList = new ArrayList<>();
+        FILE_PATH_MAP.put(batchNumber, filePathList);
+        for (List<TableEntity> tables : partitions) {
             //保存测试数据
-            String finalClientIp = clientIp;
             executorService.execute(() -> {
-                List<String> filePaths = generatorSingleTable(hasProgress, type, tableFieldMap, foreignKeyMap, table, finalClientIp);
-                filePathList.addAll(filePaths);
-                countDownLatch.countDown();
+                for (TableEntity table : tables) {
+                    List<String> filePaths = generatorSingleTable(hasProgress, type, tableFieldMap, foreignKeyMap, table, clientIp);
+                    filePathList.addAll(filePaths);
+                    log.info("表名:" + table.getTableName() + ":生成测试数据完成========数量:" + table.getDataNumber());
+                }
+                try {
+                    cyclicBarrier.await();
+                } catch (InterruptedException | BrokenBarrierException e) {
+                    e.printStackTrace();
+                }
             });
-            log.info("表名:" + table.getTableName() + ":生成测试数据完成========数量:" + table.getDataNumber());
         }
-        try {
-            countDownLatch.await();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        return filePathList;
     }
 
     /**
@@ -206,7 +233,11 @@ public class GeneratorServiceImpl implements GeneratorService {
                 } else {
                     allTestDataList.addAll(mapList);
                     if (allTestDataList.size() == dataNumber) {
-                        String temPath = generatorSetting.getTemPath() + "/" + table.getTableComment() + "-" + DateUtils.format(new Date(), "yyMMddHHmmss");
+                        String tableComment = table.getTableComment();
+                        if (StrUtil.isBlank(tableComment)) {
+                            tableComment = table.getTableName();
+                        }
+                        String temPath = generatorSetting.getTemPath() + "/" + tableComment + "-" + DateUtils.format(new Date(), "yyMMddHHmmss");
                         if (GeneratorDataTypeConstants.EXCEL.equals(type)) {
                             try {
                                 temPath = temPath + ".xlsx";
@@ -269,7 +300,7 @@ public class GeneratorServiceImpl implements GeneratorService {
             }
             dataProgressMap.put(ServletUtil.getClientIP(ServletUtils.getRequest()), dataProgresses);
             WebSocketServer webSocketServer = WebSocketServer.webSocketMap.get(ServletUtil.getClientIP(ServletUtils.getRequest()));
-            webSocketServer.sendMessage(JSON.toJSONString(dataProgresses));
+            webSocketServer.sendMessage(JSON.toJSONString(Result.ok(dataProgresses)));
         } catch (Exception e) {
             log.error("异常:{}", e);
         }
@@ -307,7 +338,7 @@ public class GeneratorServiceImpl implements GeneratorService {
                     break;
                 }
             }
-            webSocketServer.sendMessage(JSON.toJSONString(dataProgresses));
+            webSocketServer.sendMessage(JSON.toJSONString(Result.ok(dataProgresses)));
         } catch (Exception e) {
             log.error("异常:{}", e);
         }
@@ -401,7 +432,7 @@ public class GeneratorServiceImpl implements GeneratorService {
                         if (obj instanceof String) {
                             obj = "\"" + obj + "\"";
                         }
-                        mockExpressionParam[0] = mockExpressionParam[0].replace(s, String.valueOf(obj));
+                        mockExpressionParam[0] = mockExpressionParam[0].replace("@{" + s + "}", String.valueOf(obj));
                     }
                 });
                 ref.set(MockRuleEnum.getMockNameIncludeKh(mockName) + "(" + mockExpressionParam[0] + ")");
@@ -504,7 +535,7 @@ public class GeneratorServiceImpl implements GeneratorService {
                                         if (replacement instanceof String) {
                                             replacement = "\"" + replacement + "\"";
                                         }
-                                        mockExpressionParam[0] = mockExpressionParam[0].replace(s, String.valueOf(replacement));
+                                        mockExpressionParam[0] = mockExpressionParam[0].replace("@{" + s + "}", String.valueOf(replacement));
                                     }
                                     return MockRuleEnum.getMockNameIncludeKh(mockName) + "(" + mockExpressionParam[0] + ")";
                                 }).collect(Collectors.toList());
@@ -680,16 +711,6 @@ public class GeneratorServiceImpl implements GeneratorService {
         return result;
     }
 
-    /**
-     * 根据测试数据生成DBF
-     *
-     * @param tableIds
-     * @param response
-     */
-    @Override
-    public void generatorDBF(Long[] tableIds, HttpServletResponse response) {
-        generatorDbfOrExcel(tableIds, false, response);
-    }
 
     /**
      * 不是生成excel就是生成dbf
@@ -697,10 +718,24 @@ public class GeneratorServiceImpl implements GeneratorService {
      * @param tableIds
      * @param isExcel
      */
-    private void generatorDbfOrExcel(Long[] tableIds, boolean isExcel, HttpServletResponse response) {
-        List<String> pathList = this.batchGeneratorData(tableIds, true, isExcel ? GeneratorDataTypeConstants.EXCEL : GeneratorDataTypeConstants.DBF);
+    public void generatorDbfOrExcel(Long[] tableIds, boolean isExcel, HttpServletResponse response) {
+        this.batchGeneratorData(tableIds, true, isExcel ? GeneratorDataTypeConstants.EXCEL : GeneratorDataTypeConstants.DBF);
+    }
+
+    /**
+     * 下载excel或dbf
+     *
+     * @param batchNumber
+     * @param response
+     */
+    @Override
+    public void downloadDbfOrExcel(String batchNumber, HttpServletResponse response) {
+        List<String> pathList = FILE_PATH_MAP.get(batchNumber);
+        if (CollUtil.isEmpty(pathList)) {
+            throw new ServerException("文件下载序列号错误!");
+        }
         //多个文件打成压缩包导出
-        if (tableIds.length > 1) {
+        if (pathList.size() > 1) {
             //获取临时文件路径集合,并打成压缩包导出
             ZipUtil.downloadZip(response, pathList);
         } else {//单个文件直接导出
@@ -722,18 +757,6 @@ public class GeneratorServiceImpl implements GeneratorService {
             System.gc();
             pathList.forEach(FileUtil::del);
         }
-
-    }
-
-    /**
-     * 根据测试数据生成Excel
-     *
-     * @param tableIds
-     * @param response
-     */
-    @Override
-    public void generatorExcel(Long[] tableIds, HttpServletResponse response) {
-        generatorDbfOrExcel(tableIds, true, response);
     }
 
     private void sortedTable(TableEntity tableEntity, List<TableEntity> sortedTableEntities) {

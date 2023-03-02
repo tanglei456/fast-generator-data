@@ -1450,7 +1450,7 @@ public class RandomValueUtil extends RandomUtil {
             }
             //mockName为空，去缓存里查找全局mock映射是否存在
             if (StrUtil.isBlank(mockName)) {
-                MockRule mockRule = ConstantCache.mockRuleMap.get(attrType);
+                MockRule mockRule = ConstantCache.MOCK_RULE_MAP.get(attrType);
                 mockName = mockRule != null ? mockRule.getName() : null;
             }
             //随机数据产生
@@ -1458,7 +1458,7 @@ public class RandomValueUtil extends RandomUtil {
                 randomData = MockRuleEnum.getMock(mockName).getRandomValue(mockName);
 
                 //将产生的随机类型转化为指定类型,如果不能转换就置空
-                Map<String, FieldTypeEntity> fieldTypeMap = ConstantCache.fieldTypeMap;
+                Map<String, FieldTypeEntity> fieldTypeMap = ConstantCache.FIELD_TYPE_MAP;
                 Map<String, FieldTypeEntity> attrTypeMap = fieldTypeMap.values().stream().collect(Collectors.toMap(FieldTypeEntity::getAttrType, Function.identity(), (oldData, newData) -> oldData));
                 FieldTypeEntity fieldTypeEntity = attrTypeMap.get(attrType);
                 String packageName = fieldTypeEntity != null ? fieldTypeEntity.getPackageName() : null;

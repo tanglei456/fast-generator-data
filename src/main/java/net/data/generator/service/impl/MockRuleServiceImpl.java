@@ -42,7 +42,7 @@ public class MockRuleServiceImpl extends BaseServiceImpl<MockRuleDao, MockRule> 
                 MockRule temMock = new MockRule();
                 BeanUtils.copyProperties(mockRule, temMock);
                 temMock.setRelativeFieldName(s);
-                ConstantCache.mockRuleMap.put(s, temMock);
+                ConstantCache.MOCK_RULE_MAP.put(s, temMock);
             }
         }
     }

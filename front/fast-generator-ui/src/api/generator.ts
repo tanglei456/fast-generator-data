@@ -12,21 +12,20 @@ export const useGeneratorApi = (tableIds: any[]) => {
 
 // 生成excel
 export const useGeneratorExcel = (tableIds: any[]) => {
-	let link = document.createElement('a');
-	link.style.display = 'none';
-	let url = "http://localhost:8088/fast-generator-data/gen/generator/excel?tableIds="+tableIds; //绝对地址
-	link.href = url;
-	document.head.appendChild(link);
-	link.click();
-	document.head.removeChild(link);
-	window.location.href();
+	return service.get('/gen/generator/excel?tableIds=' + tableIds)
 }	
 
 // 生成dbf
 export const useGeneratorDbf = (tableIds: any[]) => {
+	return service.get('/gen/generator/dbf?tableIds=' + tableIds);
+}	
+
+
+// 生成excel
+export const useGeneratorDownloadDbfOrExcel = (batchNumber: string) => {
 	let link = document.createElement('a');
 	link.style.display = 'none';
-	let url = "http://localhost:8088/fast-generator-data/gen/generator/dbf?tableIds="+tableIds; //绝对地址
+	let url = "http://10.3.8.236:8088/fast-generator-data/gen/generator/download/dbfOrExcel?batchNumber="+batchNumber; //绝对地址
 	link.href = url;
 	document.head.appendChild(link);
 	link.click();

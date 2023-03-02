@@ -27,9 +27,9 @@ public class GeneratorController {
     /**
      * 生成测试数据
      */
-    @PostMapping("data")
+    @PostMapping("/data")
     public Result<String> generatorData(@RequestBody Long[] tableIds) throws Exception {
-        generatorService.batchGeneratorData(tableIds,true, GeneratorDataTypeConstants.TEST_DATA);
+        generatorService.batchGeneratorData(tableIds, true, GeneratorDataTypeConstants.TEST_DATA);
         return Result.ok();
     }
 
@@ -37,17 +37,25 @@ public class GeneratorController {
     /**
      * 生成DBF
      */
-    @GetMapping("dbf")
-    public void generatorDbf(@RequestParam Long[] tableIds, HttpServletResponse response) throws Exception {
-        generatorService.generatorDBF(tableIds, response);
+    @GetMapping("/dbf")
+    public void generatorDbf(@RequestParam Long[] tableIds) throws Exception {
+        generatorService.batchGeneratorData(tableIds, true, GeneratorDataTypeConstants.DBF);
     }
 
     /**
-     * 生成测试数据EXCEL
+     * 生成excel
      */
-    @GetMapping("excel")
-    public void generatorExcel(@RequestParam Long[] tableIds, HttpServletResponse response) throws Exception {
-        generatorService.generatorExcel(tableIds, response);
+    @GetMapping("/excel")
+    public void generatorExcel(@RequestParam Long[] tableIds) throws Exception {
+        generatorService.batchGeneratorData(tableIds, true, GeneratorDataTypeConstants.EXCEL);
+    }
+
+    /**
+     * 下载dbf或excel
+     */
+    @GetMapping("/download/dbfOrExcel")
+    public void downloadDbfOrExcel(@RequestParam String batchNumber, HttpServletResponse response) throws Exception {
+        generatorService.downloadDbfOrExcel(batchNumber, response);
     }
 
 

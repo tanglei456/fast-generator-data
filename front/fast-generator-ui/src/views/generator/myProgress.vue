@@ -6,13 +6,14 @@
 			<div>{{ item.generatorNumber }} / {{ item.totalNumber }}(耗时:{{ item.useTime }}s)</div>
 			<el-divider />
 		</div>
-		<el-empty v-if="progressArrays==null||progressArrays.length==0"  :image-size="300" description="暂无任务" />
+		<el-empty v-if="progressArrays == null || progressArrays.length == 0" :image-size="300" description="暂无任务" />
 	</el-drawer>
 </template>
 
 <script setup lang="ts">
 import { reactive, ref, defineExpose } from 'vue'
 import { webSocketStore } from '@/api/webSocket'
+import { useGeneratorDownloadDbfOrExcel } from '@/api/generator'
 import { createWebSocket, sendSock, closeSock } from '@/api/socket'
 const webSocket = webSocketStore()
 const percentage = ref(20)
@@ -41,9 +42,21 @@ const showProgress = () => {
 }
 
 const global_callback = (msg: any) => {
+	//处理回调
 	console.log('websocket的回调函数收到服务器信息：' + JSON.stringify(msg))
 	console.log('收到服务器信息：' + msg)
-	progressArrays.value = JSON.parse(JSON.stringify(msg))
+	var reponse = JSON.parse(JSON.stringify(msg))
+	//成功接收
+	if (reponse.code == 0) {
+		if (Object.prototype.toString.call(reponse.data) === '[object String]') {
+			//调用下载接口
+			useGeneratorDownloadDbfOrExcel(reponse.data);
+		} else {
+			progressArrays.value = reponse.data
+		}
+	} else {
+		//请求错误,提示错误
+	}
 }
 
 defineExpose({ init, showProgress })

@@ -22,7 +22,7 @@ public interface GeneratorService {
      * @param type  1:测试数据 2:excel 3:DBF   {@link GeneratorDataType}
      * @return
      */
-    List<String> batchGeneratorData(Long[] tableIds, boolean hasProgress, String type);
+    void batchGeneratorData(Long[] tableIds, boolean hasProgress, String type);
 
     Map mockInterfaceReturnData(String tableName);
 
@@ -31,18 +31,9 @@ public interface GeneratorService {
     Map mockByTableId(String tableId);
 
     /**
-     * 根据测试数据生成DBF
-     *
-     * @param tableIds
+     * 下载excel或dbf
+     * @param batchNumber
      * @param response
      */
-    void generatorDBF(Long[] tableIds, HttpServletResponse response);
-
-    /**
-     * 根据测试数据生成Excel
-     *
-     * @param tableIds
-     * @param response
-     */
-    void generatorExcel(Long[] tableIds, HttpServletResponse response);
+    void downloadDbfOrExcel(String batchNumber, HttpServletResponse response);
 }

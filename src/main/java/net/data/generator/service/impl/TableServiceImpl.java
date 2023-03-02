@@ -257,6 +257,7 @@ public class TableServiceImpl extends BaseServiceImpl<TableDao, TableEntity> imp
                 tableEntity.setTableName(tableName);
                 tableEntity.setDataNumber(generatorSetting.getDataNumber());
                 tableEntity.setCreateTime(new Date());
+                tableEntity.setTableComment(tableName);
                 tableEntity.setDatasourceId(datasourceId);
                 this.save(tableEntity);
                 //保存字段信息
