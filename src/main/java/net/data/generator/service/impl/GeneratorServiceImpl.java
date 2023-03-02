@@ -78,12 +78,8 @@ public class GeneratorServiceImpl implements GeneratorService {
     /**
      * 创建一个数据生成线程 4的线程池
      */
-    private final ExecutorService executorService = Executors.newFixedThreadPool(4);
+    public final static ExecutorService executorService = Executors.newFixedThreadPool(4);
 
-    /**
-     * 数据保存线程
-     */
-    private final ExecutorService saveDataService = Executors.newFixedThreadPool(2);
 
     public final static HashMap<String, List<Map<String, Object>>> GENERATED_DATA = new HashMap<>();
 
@@ -132,7 +128,7 @@ public class GeneratorServiceImpl implements GeneratorService {
         int parties = 4;
         if (tableEntities.size() <= 4) {
             parties = tableEntities.size();
-            partitions.add(tableEntities);
+            partitions = Lists.partition(tableEntities, 1);
         } else {
             partitions = Lists.partition(tableEntities, BigDecimal.valueOf(tableEntities.size()).divide(BigDecimal.valueOf(4), RoundingMode.UP).intValue());
         }
@@ -219,17 +215,14 @@ public class GeneratorServiceImpl implements GeneratorService {
                 }
                 //生成测试数据
                 List<Map<String, Object>> mapList = generatorTestData(table, template, tableFieldEntities, foreignKeyMap, mockNameKeyMap);
-
                 //保存到数据源
                 if (GeneratorDataTypeConstants.TEST_DATA.equals(type)) {
-                    saveDataService.execute(() -> {
                         try {
                             commonConnectSource.batchSave(genDataSource, table.getTableName(), mapList);
                         } catch (Exception e) {
                             log.error("表名:" + table.getTableName() + "生成测试数据异常", e);
                             throw new ServerException("保存数据库失败,失败原因:" + e.getMessage());
                         }
-                    });
                     //保存到磁盘
                 } else {
                     allTestDataList.addAll(mapList);
@@ -739,7 +732,8 @@ public class GeneratorServiceImpl implements GeneratorService {
         if (pathList.size() > 1) {
             //获取临时文件路径集合,并打成压缩包导出
             ZipUtil.downloadZip(response, pathList);
-        } else {//单个文件直接导出
+        } else {
+            //单个文件直接导出
             try {
                 DataExportUtil.exportExcelOrDbf(pathList.get(0), response);
             } catch (IOException e) {
