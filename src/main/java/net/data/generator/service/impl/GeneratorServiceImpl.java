@@ -78,8 +78,13 @@ public class GeneratorServiceImpl implements GeneratorService {
     /**
      * 创建一个数据生成线程线程池
      */
-    public final static ExecutorService executorService = Executors.newWorkStealingPool();
+    public final static ExecutorService generatorServiceThread = Executors.newWorkStealingPool();
 
+
+    /**
+     * 创建一个数据生成线程线程池
+     */
+    public final static ExecutorService saveServiceThread = Executors.newWorkStealingPool();
 
     public final static HashMap<String, List<Map<String, Object>>> GENERATED_DATA = new HashMap<>();
 
@@ -125,7 +130,7 @@ public class GeneratorServiceImpl implements GeneratorService {
 
 
         //获取cpu核心数
-        int threadNumber = Runtime.getRuntime().availableProcessors();
+        int threadNumber = Runtime.getRuntime().availableProcessors()/2;
         int parties = BigDecimal.valueOf(tableEntities.size()).divide(BigDecimal.valueOf(threadNumber), RoundingMode.UP).intValue();
         //给线程分配任务
         List<List<TableEntity>> partitions = Lists.partition(tableEntities, parties);
@@ -148,8 +153,8 @@ public class GeneratorServiceImpl implements GeneratorService {
         });
 
         for (List<TableEntity> tables : partitions) {
-            //保存测试数据
-            executorService.submit(() -> {
+            //生成测试数据
+            generatorServiceThread.submit(() -> {
                 for (TableEntity table : tables) {
                     List<String> filePaths = generatorSingleTable(hasProgress, type, tableFieldMap, foreignKeyMap, table, clientIp);
                     filePathList.addAll(filePaths);
@@ -214,12 +219,14 @@ public class GeneratorServiceImpl implements GeneratorService {
                 List<Map<String, Object>> mapList = generatorTestData(table, template, tableFieldEntities, foreignKeyMap, mockNameKeyMap);
                 //保存到数据源
                 if (GeneratorDataTypeConstants.TEST_DATA.equals(type)) {
-                    try {
-                        commonConnectSource.batchSave(genDataSource, table.getTableName(), mapList);
-                    } catch (Exception e) {
-                        log.error("表名:" + table.getTableName() + "生成测试数据异常", e);
-                        throw new ServerException("保存数据库失败,失败原因:" + e.getMessage());
-                    }
+                    saveServiceThread.submit(()->{
+                        try {
+                            commonConnectSource.batchSave(genDataSource, table.getTableName(), mapList);
+                        } catch (Exception e) {
+                            log.error("表名:" + table.getTableName() + "生成测试数据异常", e);
+                            throw new ServerException("保存数据库失败,失败原因:" + e.getMessage());
+                        }
+                    });
                     //保存到磁盘
                 } else {
                     allTestDataList.addAll(mapList);
