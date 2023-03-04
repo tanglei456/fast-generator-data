@@ -2,6 +2,7 @@ package net.data.generator.datasource;
 
 import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
+import com.google.common.collect.Lists;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.data.generator.common.exception.ServerException;
@@ -149,13 +150,17 @@ public class CommonConnectSourceImpl implements CommonConnectSource {
 
     @Override
     public void batchSave(GenDataSource datasource, String tableName, List<Map<String, Object>> mapList) throws Exception {
-            //记录sql占位符与列索引的位置关系
-            Map<String, Integer> map = new HashMap<>();
-            String sql = datasource.getDbQuery().tableDataSaveSql(tableName, map, mapList);
+        //记录sql占位符与列索引的位置关系
+        Map<String, Integer> map = new HashMap<>();
+        String sql = datasource.getDbQuery().tableDataSaveSql(tableName, map, mapList);
 
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
-            connection.setAutoCommit(false);
-            for (Map<String, Object> objectMap : mapList) {
+        PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        connection.setAutoCommit(false);
+        //分批次,1000条为一批次
+        List<List<Map<String, Object>>> lists = Lists.partition(mapList, 1000);
+
+        for (List<Map<String, Object>> list : lists) {
+            for (Map<String, Object> objectMap : list) {
                 objectMap.forEach((name, value) -> {
                     try {
                         preparedStatement.setObject(map.get(name), value);
@@ -167,6 +172,8 @@ public class CommonConnectSourceImpl implements CommonConnectSource {
             }
             preparedStatement.executeBatch();
             connection.commit();
+        }
+
     }
 
     @Override

@@ -41,6 +41,7 @@ import net.data.generator.service.TableFieldService;
 import net.data.generator.service.TableService;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -74,11 +75,12 @@ public class GeneratorServiceImpl implements GeneratorService {
     private final TableFieldService tableFieldService;
     private final GeneratorSetting generatorSetting;
     public static Map<String, List<DataProgress>> dataProgressMap = new ConcurrentHashMap<>();
+    private final RedisTemplate<String, List<Map<String, Object>>> redisTemplate;
 
     /**
-     * 创建一个数据生成线程线程池
+     * 线程数量为cpu核心数一半的线程池
      */
-    public final static ExecutorService generatorServiceThread = Executors.newWorkStealingPool();
+    public final static ExecutorService generatorServiceThread = Executors.newWorkStealingPool(Runtime.getRuntime().availableProcessors() / 2);
 
 
     /**
@@ -130,7 +132,7 @@ public class GeneratorServiceImpl implements GeneratorService {
 
 
         //获取cpu核心数
-        int threadNumber = Runtime.getRuntime().availableProcessors()/2;
+        int threadNumber = Runtime.getRuntime().availableProcessors() / 2;
         int parties = BigDecimal.valueOf(tableEntities.size()).divide(BigDecimal.valueOf(threadNumber), RoundingMode.UP).intValue();
         //给线程分配任务
         List<List<TableEntity>> partitions = Lists.partition(tableEntities, parties);
@@ -207,7 +209,7 @@ public class GeneratorServiceImpl implements GeneratorService {
         //生成的数据量,分批次生成
         Integer dataNumber = table.getDataNumber();
         int number = 1;
-        int batchNumber = 1000;
+        int batchNumber = 10000;
         while (number <= dataNumber) {
             if (number % batchNumber == 0 || number == dataNumber) {
                 if (number == dataNumber) {
@@ -217,18 +219,27 @@ public class GeneratorServiceImpl implements GeneratorService {
                 }
                 //生成测试数据
                 List<Map<String, Object>> mapList = generatorTestData(table, template, tableFieldEntities, foreignKeyMap, mockNameKeyMap);
+                //保存测试数据到redis
+                //批次id
+                String snowflake = IdUtil.getSnowflakeNextIdStr();
+                redisTemplate.opsForValue().set(snowflake, mapList, 30, TimeUnit.MINUTES);
                 //保存到数据源
                 if (GeneratorDataTypeConstants.TEST_DATA.equals(type)) {
-                    saveServiceThread.submit(()->{
+                    saveServiceThread.submit(() -> {
                         try {
-                            commonConnectSource.batchSave(genDataSource, table.getTableName(), mapList);
+                            List<Map<String, Object>> data = redisTemplate.opsForValue().get(snowflake);
+                            if (CollUtil.isNotEmpty(data)) {
+                                commonConnectSource.batchSave(genDataSource, table.getTableName(), data);
+                            }
                         } catch (Exception e) {
                             log.error("表名:" + table.getTableName() + "生成测试数据异常", e);
                             throw new ServerException("保存数据库失败,失败原因:" + e.getMessage());
+                        } finally {
+                            //删除redis缓存
+                            redisTemplate.delete(snowflake);
                         }
                     });
-                    //保存到磁盘
-                } else {
+                } else {//保存到磁盘
                     allTestDataList.addAll(mapList);
                     if (allTestDataList.size() == dataNumber) {
                         String tableComment = table.getTableComment();

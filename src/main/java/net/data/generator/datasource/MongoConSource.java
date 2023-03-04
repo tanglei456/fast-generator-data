@@ -2,6 +2,7 @@ package net.data.generator.datasource;
 
 import cn.hutool.core.collection.ListUtil;
 import com.alibaba.fastjson2.JSONObject;
+import com.google.common.collect.Lists;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoIterable;
@@ -87,10 +88,14 @@ public class MongoConSource extends CommonConnectSourceImpl {
 
     @Override
     public void batchSave(GenDataSource genDataSource, String tableName, List<Map<String, Object>> mapList) {
-        //分批次插入测试数据,避免一次性插入过多连接超时
-        BulkOperations bulkOperations = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, tableName);
-        bulkOperations.insert(mapList);
-        bulkOperations.execute();
+        List<List<Map<String, Object>>> lists = Lists.partition(mapList, 1000);
+        for (List<Map<String, Object>> list : lists) {
+            //分批次插入测试数据,避免一次性插入过多连接超时
+            BulkOperations bulkOperations = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, tableName);
+            bulkOperations.insert(list);
+            bulkOperations.execute();
+        }
+
     }
 
     @Override
