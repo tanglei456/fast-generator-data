@@ -209,7 +209,7 @@ public class GeneratorServiceImpl implements GeneratorService {
         //生成的数据量,分批次生成
         Integer dataNumber = table.getDataNumber();
         int number = 1;
-        int batchNumber = 10000;
+        int batchNumber = 3000;
         while (number <= dataNumber) {
             if (number % batchNumber == 0 || number == dataNumber) {
                 if (number == dataNumber) {
