@@ -157,14 +157,14 @@ public class GeneratorServiceImpl implements GeneratorService {
         for (List<TableEntity> tables : partitions) {
             //生成测试数据
             generatorServiceThread.submit(() -> {
-                for (TableEntity table : tables) {
-                    List<String> filePaths = generatorSingleTable(hasProgress, type, tableFieldMap, foreignKeyMap, table, clientIp);
-                    filePathList.addAll(filePaths);
-                    log.info("表名:" + table.getTableName() + ":生成测试数据完成========数量:" + table.getDataNumber());
-                }
                 try {
+                    for (TableEntity table : tables) {
+                        List<String> filePaths = generatorSingleTable(hasProgress, type, tableFieldMap, foreignKeyMap, table, clientIp);
+                        filePathList.addAll(filePaths);
+                        log.info("表名:" + table.getTableName() + ":生成测试数据完成========数量:" + table.getDataNumber());
+                    }
                     cyclicBarrier.await();
-                } catch (InterruptedException | BrokenBarrierException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             });
@@ -668,7 +668,7 @@ public class GeneratorServiceImpl implements GeneratorService {
     @Override
     public Map mockInterfaceReturnData(String tableName) {
         Map<String, Object> result = new HashMap<>();
-        TableEntity table = tableService.getByTableName(tableName);
+        TableEntity table = tableService.getByTableName(tableName, null);
         if (ObjectUtil.isNotNull(table)) {
             List<TableEntity> tableEntities = tableService.listByIds(Collections.singletonList(table.getId()));
             List<TableFieldEntity> tableFieldEntityList = tableFieldService.getByTableIds(new Long[]{table.getId()});

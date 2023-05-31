@@ -15,6 +15,7 @@ public class TestSnak {
     @Test
     public void testId(){
         for (int i = 0; i < 10; i++) {
+            String snowflakeNextIdStr = IdUtil.getSnowflakeNextIdStr();
             long l = IdUtil.getSnowflake(1, 1).nextId();
             System.out.println(l);
         }

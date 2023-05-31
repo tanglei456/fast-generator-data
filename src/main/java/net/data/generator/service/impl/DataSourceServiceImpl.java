@@ -54,7 +54,7 @@ public class DataSourceServiceImpl extends BaseServiceImpl<DataSourceDao, DataSo
     @Override
     public List<DataSourceEntity> getList(Query query) {
         List<DataSourceEntity> dataSourceEntities =new ArrayList<>();
-        if (ObjectUtil.isNotNull(query.getFilterExistTable()) && query.getFilterExistTable()) {
+            if (ObjectUtil.isNotNull(query.getFilterExistTable()) && query.getFilterExistTable()) {
             dataSourceEntities = baseMapper.selectListContainTable();
         } else {
             dataSourceEntities = baseMapper.selectList(new QueryWrapper<>());

@@ -69,9 +69,9 @@ public class TableServiceImpl extends BaseServiceImpl<TableDao, TableEntity> imp
     }
 
     @Override
-    public TableEntity getByTableName(String tableName) {
+    public TableEntity getByTableName(String tableName, String dataSourceId) {
         LambdaQueryWrapper<TableEntity> queryWrapper = Wrappers.lambdaQuery();
-        return baseMapper.selectOne(queryWrapper.eq(TableEntity::getTableName, tableName));
+        return baseMapper.selectOne(queryWrapper.eq(TableEntity::getTableName, tableName).eq(TableEntity::getDatasourceId,dataSourceId));
     }
 
     @Override
@@ -100,7 +100,7 @@ public class TableServiceImpl extends BaseServiceImpl<TableDao, TableEntity> imp
 
         for (String tableName : tableNameList) {
             // 查询表是否存在
-            TableEntity table = this.getByTableName(tableName);
+            TableEntity table = this.getByTableName(tableName, String.valueOf(datasourceId));
             boolean exist = table != null;
             //表不存在,保存表
             if (!exist) {

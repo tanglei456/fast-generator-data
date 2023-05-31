@@ -17,6 +17,6 @@ import java.util.List;
 @Mapper
 public interface DataSourceDao extends BaseMapper<DataSourceEntity> {
 
-    @Select("select gd.* from gen_datasource gd   inner join gen_table gt  on gd.id=gt.datasource_id group by gd.id ")
+    @Select("select gd.* from gen_datasource gd   inner join  gen_table gt  on gd.id=gt.datasource_id group by gd.id ")
     List<DataSourceEntity> selectListContainTable();
 }
