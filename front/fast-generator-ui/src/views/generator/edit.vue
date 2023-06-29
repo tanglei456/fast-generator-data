@@ -29,7 +29,7 @@
 							<vxe-checkbox v-model="row.id"></vxe-checkbox>
 						</template>
 					</vxe-column> -->
-					<!-- <vxe-column width="60" title="拖动">
+					<vxe-column  field="sort"  width="60" title="拖动">
 						<template #default>
 							<span class="drag-btn">
 								<i class="vxe-icon-sort"></i>
@@ -40,7 +40,7 @@
 								<i class="vxe-icon-question-circle-fill"></i>
 							</el-tooltip>
 						</template>
-					</vxe-column> -->
+					</vxe-column>
 					<vxe-column field="fieldName" :edit-render="{ name: 'input' }" title="字段名"></vxe-column>
 					<vxe-column field="fieldComment" title="字段说明" :edit-render="{ name: 'input' }"></vxe-column>
 					<vxe-column field="fieldType" title="字段类型"></vxe-column>

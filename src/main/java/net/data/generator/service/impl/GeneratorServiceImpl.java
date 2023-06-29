@@ -15,6 +15,7 @@ import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.google.common.collect.Lists;
 import lombok.AllArgsConstructor;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import net.data.generator.common.config.GenDataSource;
 import net.data.generator.common.config.GeneratorSetting;
@@ -107,6 +108,7 @@ public class GeneratorServiceImpl implements GeneratorService {
             throw new ServerException("表字段不存在!");
         }
 
+        //获取外键集合 , key:tableId+foreignName
         //<tableId,表>
         Map<Long, TableEntity> tableIdKeyTableMap = tableEntities.stream().collect(Collectors.toMap(TableEntity::getId, Function.identity()));
         //<tableId,字段集合>
@@ -116,8 +118,6 @@ public class GeneratorServiceImpl implements GeneratorService {
                             oldList.addAll(newList);
                             return oldList;
                         }));
-
-        //获取外键集合 , key:tableId+foreignName
         Map<String, List<Map<String, Object>>> foreignKeyMap = foreignKeyMap(tableFieldEntityList, tableIdKeyTableMap);
         //获取@enum 枚举对象集合 key:对象名
         Map<String, List<Map<String, Object>>> stringListMap = parseEnumObjType(tableFieldEntityList);

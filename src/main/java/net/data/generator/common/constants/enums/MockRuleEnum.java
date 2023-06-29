@@ -7,6 +7,8 @@ import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONWriter;
+import com.fasterxml.jackson.core.JsonParser;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.data.generator.common.constants.DbFieldTypeConstants;
@@ -73,7 +75,7 @@ public enum MockRuleEnum {
     }, Date("Date") {
         @Override
         public Object getRandomValue(Object... params) {
-            return JSON.toJSONString(RandomValueUtil.randomDate(new Date(), DateField.DAY_OF_MONTH, 1, 30) );
+            return JSON.toJSONString(RandomValueUtil.randomDate(new Date(), DateField.DAY_OF_MONTH, 1, 30) , JSONWriter.Feature.WriteClassName);
         }
     }, BLOB("Blob") {
         @Override
