@@ -404,9 +404,7 @@ public enum MockRuleEnum {
             //拆分
             String regexp = mockName.substring(mockName.indexOf("(") + 1, mockName.lastIndexOf(")"));
             try {
-                Xeger xeger = new Xeger(regexp);
-                //执行表达式产生随机数
-                return xeger.generate();
+               return RandomValueUtil.regexp(regexp);
             } catch (Exception e) {
                 log.error("mock类型:{},随机数据生成异常:{}", name(), e.getStackTrace());
             }

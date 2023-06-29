@@ -13,6 +13,7 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpUtil;
 import cn.hutool.script.JavaScriptEngine;
 import cn.hutool.script.ScriptUtil;
+import com.alibaba.fastjson2.JSON;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import lombok.extern.slf4j.Slf4j;
 import net.data.generator.common.constants.DbFieldTypeConstants;
@@ -1519,5 +1520,11 @@ public class RandomValueUtil extends RandomUtil {
             max=10;
         }
         return randomString("0123456789", randomInt(min, max));
+    }
+
+    public static Object regexp(String regexp) throws ScriptException {
+        String a="{'regexp'"+":/"+regexp+"/}";
+        ScriptObjectMirror scriptObjectMirror = (ScriptObjectMirror) mockRandom(StrFormatter.format("mock(" + a + ")"));
+        return scriptObjectMirror.get("regexp");
     }
 }
