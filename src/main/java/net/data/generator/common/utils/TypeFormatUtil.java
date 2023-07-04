@@ -5,7 +5,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.RandomUtil;
 import net.data.generator.common.utils.tree.TreeUtils;
-import net.data.generator.common.constants.DbFieldType;
+import net.data.generator.common.constants.DbFieldTypeConstants;
 import net.data.generator.entity.TableFieldEntity;
 import org.bson.types.ObjectId;
 import org.jetbrains.annotations.NotNull;
@@ -65,16 +65,16 @@ public class TypeFormatUtil {
                     if (CollUtil.isEmpty(((List<?>) obj))) {
                         return;
                     }
-                    tableFieldEntity.setFieldType(DbFieldType.ARRAYS);
+                    tableFieldEntity.setFieldType(DbFieldTypeConstants.ARRAYS);
                     List<TableFieldEntity> children = new ArrayList<>();
                     Object source1 = ((List<?>) obj).get(0);
                     //基本类型
                     if (baseType(source1, null)) {
                         TableFieldEntity tableField = buildTableFieldEntity(tableId, tableFieldEntity);
                         if (StringUtils.isNotBlank(temFullName)) {
-                            temFullName = temFullName + "." + key + "." + DbFieldType.ITEM;
+                            temFullName = temFullName + "." + key + "." + DbFieldTypeConstants.ITEM;
                         } else {
-                            temFullName = key + "." + DbFieldType.ITEM;
+                            temFullName = key + "." + DbFieldTypeConstants.ITEM;
                         }
                         tableField.setFullFieldName(temFullName);
 
@@ -86,20 +86,20 @@ public class TypeFormatUtil {
                         TableFieldEntity son = buildTableFieldEntity(tableId, tableFieldEntity);
 
                         if (StringUtils.isNotBlank(temFullName)) {
-                            temFullName = temFullName + "." + key + "." + DbFieldType.ITEM;
+                            temFullName = temFullName + "." + key + "." + DbFieldTypeConstants.ITEM;
                         } else {
-                            temFullName = key + "." + DbFieldType.ITEM;
+                            temFullName = key + "." + DbFieldTypeConstants.ITEM;
                         }
                         son.setFullFieldName(temFullName);
 
                         son.setChildren(children);
-                        son.setFieldType(DbFieldType.OBJECT);
+                        son.setFieldType(DbFieldTypeConstants.OBJECT);
                         tableFieldEntity.setChildren(Collections.singletonList(son));
                         parseDocument(source1, children, son.getId(), temFullName, tableId);
                     }
                 }
                 if (obj instanceof Map) {
-                    tableFieldEntity.setFieldType(DbFieldType.OBJECT);
+                    tableFieldEntity.setFieldType(DbFieldTypeConstants.OBJECT);
                     List<TableFieldEntity> children = new ArrayList<>();
                     tableFieldEntity.setChildren(children);
                     Map beanMap = (Map) obj;
@@ -112,7 +112,7 @@ public class TypeFormatUtil {
     @NotNull
     private static TableFieldEntity buildTableFieldEntity(Long tableId, TableFieldEntity tableFieldEntity) {
         TableFieldEntity tableField = new TableFieldEntity();
-        tableField.setFieldName(DbFieldType.ITEM);
+        tableField.setFieldName(DbFieldTypeConstants.ITEM);
         tableField.setTableId(tableId);
         tableField.setParentId(tableFieldEntity.getId());
         tableField.setId(Long.valueOf(RandomUtil.randomNumbers(13)));
@@ -122,25 +122,25 @@ public class TypeFormatUtil {
     private static boolean baseType(Object obj, @Null TableFieldEntity tableFieldEntity) {
         String type = null;
         if (obj instanceof String) {
-            type = DbFieldType.STRING;
+            type = DbFieldTypeConstants.STRING;
         }
         if (obj instanceof Date) {
-            type = DbFieldType.DATE;
+            type = DbFieldTypeConstants.DATE;
         }
         if (obj instanceof Integer) {
-            type = DbFieldType.INTEGER;
+            type = DbFieldTypeConstants.INTEGER;
         }
         if (obj instanceof Long) {
-            type = DbFieldType.LONG;
+            type = DbFieldTypeConstants.LONG;
         }
         if (obj instanceof Double) {
-            type = DbFieldType.DOUBLE;
+            type = DbFieldTypeConstants.DOUBLE;
         }
         if (obj instanceof Boolean) {
-            type = DbFieldType.BOOLEAN;
+            type = DbFieldTypeConstants.BOOLEAN;
         }
         if (obj instanceof ObjectId) {
-            type = DbFieldType.OBJECT_ID;
+            type = DbFieldTypeConstants.OBJECT_ID;
         }
         if (type != null) {
             if (ObjectUtil.isNotNull(tableFieldEntity)) {
@@ -201,8 +201,8 @@ public class TypeFormatUtil {
             if (tableField.isAutoIncrement()){
                 continue;
             }
-            if (DbFieldType.OBJECT.equals(attrType)) {
-                if (DbFieldType.ITEM.equals(tableField.getFieldName())) {
+            if (DbFieldTypeConstants.OBJECT.equals(attrType)) {
+                if (DbFieldTypeConstants.ITEM.equals(tableField.getFieldName())) {
                     Map<String, Object> objectMap = new HashMap<>();
                     sonTaleFieldEntity.add(objectMap);
                     formatOriginalData(tableField.getChildren(), sonTaleFieldEntity, objectMap);
@@ -211,23 +211,23 @@ public class TypeFormatUtil {
                     map.put(tableField.getFieldName(), objectMap);
                     formatOriginalData(tableField.getChildren(), sonTaleFieldEntity, objectMap);
                 }
-            } else if (DbFieldType.ARRAYS.equals(attrType)) {
+            } else if (DbFieldTypeConstants.ARRAYS.equals(attrType)) {
                 List<Object> list = new ArrayList<>();
                 map.put(tableField.getFieldName(), list);
                 if (tableField.getChildren() != null) {
                     formatOriginalData(tableField.getChildren(), list, map);
                 }
-            } else if (DbFieldType.ITEM.equals(tableField.getFieldName())) {
+            } else if (DbFieldTypeConstants.ITEM.equals(tableField.getFieldName())) {
                 String value = "{" + tableField.getId() + "}";
                 //如果不是String或ObjectId加个@代表需要去掉占位符外的引号
-                if (!DbFieldType.STRING.equals(tableField.getAttrType()) && !DbFieldType.OBJECT_ID.equals(tableField.getAttrType())) {
+                if (!DbFieldTypeConstants.STRING.equals(tableField.getAttrType()) && !DbFieldTypeConstants.OBJECT_ID.equals(tableField.getAttrType())) {
                     value = "{@" + tableField.getId() + "@}";
                 }
                 sonTaleFieldEntity.add(value);
             } else {
                 String value = "{" + tableField.getId() + "}";
                 //如果不是String或ObjectId多加个@代表需要去掉占位符外的引号
-                if (!DbFieldType.STRING.equals(tableField.getAttrType()) && !DbFieldType.OBJECT_ID.equals(tableField.getAttrType())) {
+                if (!DbFieldTypeConstants.STRING.equals(tableField.getAttrType()) && !DbFieldTypeConstants.OBJECT_ID.equals(tableField.getAttrType())) {
                     value = "{@" + tableField.getId() + "@}";
                 }
                 map.put(tableField.getFieldName(), value);

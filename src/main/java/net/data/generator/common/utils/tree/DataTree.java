@@ -4,8 +4,6 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * @author 张骞
- * @version 1.0
  * @param <T>
  *     element ui 树形控件使用
  */

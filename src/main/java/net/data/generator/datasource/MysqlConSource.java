@@ -1,8 +1,6 @@
 package net.data.generator.datasource;
 
-import com.alibaba.fastjson.JSONObject;
 import net.data.generator.common.config.GenDataSource;
-import org.springframework.stereotype.Component;
 
 /**
  * @author tanglei

@@ -1,6 +1,6 @@
 package net.data.generator.common.utils;
 
-import net.data.generator.common.constants.DbType;
+import net.data.generator.common.constants.enums.DbTypeEnum;
 import net.data.generator.common.config.GenDataSource;
 import oracle.jdbc.OracleConnection;
 
@@ -20,10 +20,10 @@ public class DbUtils {
      */
     public static Connection getConnection(GenDataSource dataSource) throws ClassNotFoundException, SQLException {
         DriverManager.setLoginTimeout(CONNECTION_TIMEOUTS_SECONDS);
-        Class.forName(dataSource.getDbType().getDriverClass());
+        Class.forName(dataSource.getDbTypeEnum().getDriverClass());
 
         Connection connection = DriverManager.getConnection(dataSource.getConnUrl(), dataSource.getUsername(), dataSource.getPassword());
-        if (dataSource.getDbType() == DbType.Oracle) {
+        if (dataSource.getDbTypeEnum() == DbTypeEnum.Oracle) {
             ((OracleConnection) connection).setRemarksReporting(true);
         }
 

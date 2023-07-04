@@ -2,10 +2,10 @@ package net.data.generator;
 
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONException;
-import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.JSONPath;
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONException;
+import com.alibaba.fastjson2.JSONObject;
+import com.alibaba.fastjson2.JSONPath;
 import lombok.extern.slf4j.Slf4j;
 import net.data.generator.api.CsvModel;
 import org.apache.commons.lang3.ArrayUtils;

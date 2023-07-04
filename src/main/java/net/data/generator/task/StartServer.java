@@ -38,7 +38,7 @@ public class StartServer implements ApplicationRunner {
 
     private void initFieldTypeKeyMap() {
         List<MockRule> mockRules = mockRuleService.list();
-        Map<String, MockRule> concurrentHashMap = ConstantCache.mockRuleMap;
+        Map<String, MockRule> concurrentHashMap = ConstantCache.MOCK_RULE_MAP;
         Optional.ofNullable(mockRules)
                 .orElse(new ArrayList<>())
                 .stream()
@@ -56,7 +56,7 @@ public class StartServer implements ApplicationRunner {
 
     public void initFieldNameKeyMockRuleMap() {
         List<FieldTypeEntity> list= fieldTypeService.getListByCondition(new Query());
-        Map<String, FieldTypeEntity> fieldTypeMap = ConstantCache.fieldTypeMap;
+        Map<String, FieldTypeEntity> fieldTypeMap = ConstantCache.FIELD_TYPE_MAP;
         for (FieldTypeEntity entity : list) {
             fieldTypeMap.put(entity.getColumnType().toLowerCase(), entity);
         }

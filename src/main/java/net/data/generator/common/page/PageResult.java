@@ -1,9 +1,7 @@
 package net.data.generator.common.page;
 
-import com.alibaba.fastjson.JSONObject;
 import lombok.Data;
 import net.data.generator.common.utils.ServletUtils;
-import org.springframework.util.CollectionUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;

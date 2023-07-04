@@ -1,8 +1,6 @@
 package net.data.generator.common.utils;
 
 import cn.hutool.core.util.StrUtil;
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 

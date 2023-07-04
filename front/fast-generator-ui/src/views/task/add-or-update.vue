@@ -131,7 +131,7 @@ const submitHandle = () => {
 			return false
 		}
 
-		addJob(dataForm).then(() => {
+		addOrUpdateJob(dataForm).then(() => {
 			ElMessage.success({
 				message: '操作成功',
 				duration: 500,

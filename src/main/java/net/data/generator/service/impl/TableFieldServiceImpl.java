@@ -53,7 +53,7 @@ public class TableFieldServiceImpl extends BaseServiceImpl<TableFieldDao, TableF
 
     public void initFieldList(List<TableFieldEntity> tableFieldList) {
         // 字段类型、属性类型映射
-        Map<String, FieldTypeEntity> fieldTypeMap = ConstantCache.fieldTypeMap;
+        Map<String, FieldTypeEntity> fieldTypeMap = ConstantCache.FIELD_TYPE_MAP;
         int index = 0;
         for (TableFieldEntity field : tableFieldList) {
             if (field.getFieldType()==null){

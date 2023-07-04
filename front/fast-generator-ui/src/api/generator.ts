@@ -25,7 +25,7 @@ export const useGeneratorDbf = (tableIds: any[]) => {
 export const useGeneratorDownloadDbfOrExcel = (batchNumber: string) => {
 	let link = document.createElement('a');
 	link.style.display = 'none';
-	let url = "http://192.168.31.109:8088/fast-generator-data/gen/generator/download/dbfOrExcel?batchNumber="+batchNumber; //绝对地址
+	let url = "http://10.3.8.236:8088/fast-generator-data/gen/generator/download/dbfOrExcel?batchNumber="+batchNumber; //绝对地址
 	link.href = url;
 	document.head.appendChild(link);
 	link.click();

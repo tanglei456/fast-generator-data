@@ -1,6 +1,6 @@
 package net.data.generator.datasource;
 
-import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson2.JSONObject;
 import net.data.generator.common.query.Query;
 import net.data.generator.common.config.GenDataSource;
 import net.data.generator.entity.TableEntity;
