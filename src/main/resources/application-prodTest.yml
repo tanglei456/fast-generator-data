@@ -2,13 +2,13 @@ spring:
   datasource:
     # MySQL
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/data_generator?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&CatalogMeansCurrent=true
+    url: jdbc:mysql://124.222.236.186:3306/data_generator?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&CatalogMeansCurrent=true
     username: root
     password: Hero@1098
   main:
     allow-bean-definition-overriding: true
   redis:
-    host: localhost
+    host: 124.222.236.186
     port: 6379
     lettuce:
       pool:

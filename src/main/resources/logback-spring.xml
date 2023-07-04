@@ -120,7 +120,7 @@
     </springProfile>
 
     <!-- 测试、生产环境，输出到文档 -->
-    <springProfile name="test,prod">
+    <springProfile name="test,prod,prodTest">
         <root level="info">
             <appender-ref ref="CONSOLE" />
             <appender-ref ref="DEBUG_FILE" />
