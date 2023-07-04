@@ -27,7 +27,7 @@
         </encoder>
     </appender>
 
-    <appender name="FILE_ALL" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <appender name="ALL_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <!--日志名称，如果没有File 属性，那么只会使用FileNamePattern的文件路径规则 如果同时有<File>和<FileNamePattern>，那么当天日志是<File>，明天会自动把今天的日志改名为今天的日期。即，<File> 的日志都是当天的。 -->
         <File>${LOG_PATH}/all/${logname}.log</File>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
@@ -49,7 +49,7 @@
         </encoder>
     </appender>
 
-    <appender name="FILE_INFO" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <appender name="INFO_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <!--如果只是想要 Info 级别的日志，只是过滤 info 还是会输出 Error 日志，因为 Error 的级别高， 所以我们使用下面的策略，可以避免输出 Error 的日志-->
         <filter class="ch.qos.logback.classic.filter.LevelFilter">
             <!--过滤 INFO-->
@@ -80,7 +80,7 @@
         </encoder>
     </appender>
 
-    <appender name="FILE_DEBUG" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <appender name="DEBUG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <!--如果只是想要 DEBUG 级别的日志，只是过滤 DEBUG 还是会输出 INFO,Error 日志，因为 Error 的级别高， 所以我们使用下面的策略，可以避免输出  INFO,Error 的日志-->
         <filter class="ch.qos.logback.classic.filter.LevelFilter">
             <!--过滤 DEBUG-->
@@ -108,7 +108,7 @@
         </encoder>
     </appender>
 
-    <appender name="FILE_ERROR" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <!--如果只是想要 Error 级别的日志，那么需要过滤一下，默认是 info 级别的，ThresholdFilter-->
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
             <level>Error</level>
@@ -144,9 +144,9 @@
     <springProfile name="test,prod,prodTest">
         <root level="info">
             <appender-ref ref="CONSOLE" />
+            <appender-ref ref="ALL_FILE" />
             <appender-ref ref="DEBUG_FILE" />
             <appender-ref ref="INFO_FILE" />
-            <appender-ref ref="WARN_FILE" />
             <appender-ref ref="ERROR_FILE" />
         </root>
     </springProfile>
