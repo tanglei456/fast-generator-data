@@ -6,7 +6,7 @@ import net.data.generator.common.exception.ServerException;
 import net.data.generator.common.page.PageResult;
 import net.data.generator.common.query.Query;
 import net.data.generator.common.utils.Result;
-import net.data.generator.common.constants.DbType;
+import net.data.generator.common.constants.enums.DbTypeEnum;
 import net.data.generator.common.config.GenDataSource;
 import net.data.generator.entity.DataSourceEntity;
 import net.data.generator.entity.TableEntity;
@@ -22,7 +22,7 @@ import java.util.List;
  */
 @Slf4j
 @RestController
-@RequestMapping("maku-generator/gen/datasource")
+@RequestMapping("/gen/datasource")
 @AllArgsConstructor
 public class DataSourceController {
     private final DataSourceService datasourceService;
@@ -52,7 +52,7 @@ public class DataSourceController {
     public Result<String> test(@PathVariable("id") Long id) {
         try {
             DataSourceEntity entity = datasourceService.getById(id);
-            boolean b = DbType.getDbType(entity.getDbType()).connectDB(new GenDataSource(entity)).testConnect(new GenDataSource(entity));
+            boolean b = DbTypeEnum.getDbType(entity.getDbType()).connectDB(new GenDataSource(entity)).testConnect(new GenDataSource(entity));
             return b?Result.ok("连接成功"):Result.error("连接失败，请检查配置信息");
         } catch (Exception e) {
             log.error(e.getMessage(), e);
@@ -96,7 +96,7 @@ public class DataSourceController {
             // 获取数据源
             GenDataSource datasource = datasourceService.get(id);
             // 根据数据源，获取全部数据表
-            List<TableEntity> tableList = datasource.getDbType().connectDB(datasource).getTableList(datasource);
+            List<TableEntity> tableList = datasource.getDbTypeEnum().connectDB(datasource).getTableList(datasource);
             return Result.ok(tableList);
         } catch (Exception e) {
             log.error(e.getMessage(), e);

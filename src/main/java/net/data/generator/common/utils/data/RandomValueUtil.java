@@ -13,9 +13,10 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpUtil;
 import cn.hutool.script.JavaScriptEngine;
 import cn.hutool.script.ScriptUtil;
+import com.alibaba.fastjson2.JSON;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import lombok.extern.slf4j.Slf4j;
-import net.data.generator.common.constants.DbFieldType;
+import net.data.generator.common.constants.DbFieldTypeConstants;
 import net.data.generator.common.utils.TypeFormatUtil;
 import net.data.generator.common.constants.ConstantCache;
 import net.data.generator.common.constants.enums.MockRuleEnum;
@@ -1442,7 +1443,7 @@ public class RandomValueUtil extends RandomUtil {
         try {
             //如果是唯一索引,产生UUID,不重复
             if (isUniqueIndex) {
-                if (attrType.equals(DbFieldType.STRING)) {
+                if (attrType.equals(DbFieldTypeConstants.STRING)) {
                     mockName = MockRuleEnum.MOCK_UID.getMockName();
                 } else {
                     mockName = MockRuleEnum.MOCK_ID.getMockName();
@@ -1450,7 +1451,7 @@ public class RandomValueUtil extends RandomUtil {
             }
             //mockName为空，去缓存里查找全局mock映射是否存在
             if (StrUtil.isBlank(mockName)) {
-                MockRule mockRule = ConstantCache.mockRuleMap.get(attrType);
+                MockRule mockRule = ConstantCache.MOCK_RULE_MAP.get(attrType);
                 mockName = mockRule != null ? mockRule.getName() : null;
             }
             //随机数据产生
@@ -1458,7 +1459,7 @@ public class RandomValueUtil extends RandomUtil {
                 randomData = MockRuleEnum.getMock(mockName).getRandomValue(mockName);
 
                 //将产生的随机类型转化为指定类型,如果不能转换就置空
-                Map<String, FieldTypeEntity> fieldTypeMap = ConstantCache.fieldTypeMap;
+                Map<String, FieldTypeEntity> fieldTypeMap = ConstantCache.FIELD_TYPE_MAP;
                 Map<String, FieldTypeEntity> attrTypeMap = fieldTypeMap.values().stream().collect(Collectors.toMap(FieldTypeEntity::getAttrType, Function.identity(), (oldData, newData) -> oldData));
                 FieldTypeEntity fieldTypeEntity = attrTypeMap.get(attrType);
                 String packageName = fieldTypeEntity != null ? fieldTypeEntity.getPackageName() : null;
@@ -1519,5 +1520,11 @@ public class RandomValueUtil extends RandomUtil {
             max=10;
         }
         return randomString("0123456789", randomInt(min, max));
+    }
+
+    public static Object regexp(String regexp) throws ScriptException {
+        String a="{'regexp'"+":/"+regexp+"/}";
+        ScriptObjectMirror scriptObjectMirror = (ScriptObjectMirror) mockRandom(StrFormatter.format("mock(" + a + ")"));
+        return scriptObjectMirror.get("regexp");
     }
 }

@@ -29,7 +29,7 @@ import static net.data.generator.common.utils.Result.error;
  * 
  */
 @RestController
-@RequestMapping("/maku-generator/gen/job")
+@RequestMapping("/gen/job")
 @Slf4j
 public class SysJobController
 {

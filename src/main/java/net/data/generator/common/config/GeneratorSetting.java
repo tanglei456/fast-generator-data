@@ -15,4 +15,9 @@ import org.springframework.stereotype.Component;
 @Data
 public class GeneratorSetting {
     private Integer dataNumber;
+
+    /**
+     * 存放excel和dbf的临时路径
+     */
+    private String temPath;
 }

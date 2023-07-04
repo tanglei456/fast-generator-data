@@ -1,8 +1,8 @@
 package net.data.generator.controller;
 
-import cn.hutool.core.io.IoUtil;
-import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson2.JSON;
 import lombok.AllArgsConstructor;
+import net.data.generator.common.exception.ServerException;
 import net.data.generator.common.page.PageResult;
 import net.data.generator.common.query.Query;
 import net.data.generator.common.utils.Result;
@@ -12,12 +12,9 @@ import net.data.generator.entity.vo.CascaderVo;
 import net.data.generator.service.TableFieldService;
 import net.data.generator.service.TableService;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.constraints.NotBlank;
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.InputStream;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -25,7 +22,7 @@ import java.util.Map;
  * 数据表管理
  */
 @RestController
-@RequestMapping("maku-generator/gen/table")
+@RequestMapping("/gen/table")
 @AllArgsConstructor
 public class TableController {
     private final TableService tableService;
@@ -104,6 +101,17 @@ public class TableController {
         return Result.ok();
     }
 
+    /**
+     * 导入JSON模板
+     * 模板结构  {"tableName":"字段对象","tableName":"字段对象"}
+     */
+//    @PostMapping("import/template")
+//    public Result<String> importTemplate(@RequestPart("file") MultipartFile multipartFile) throws Exception {
+//        //解析文件
+//        byte[] bytes = multipartFile.getBytes();
+//        String jsonStr = new String(bytes);
+//        return Result.ok(jsonStr);
+//    }
 
     /**
      * JSON模板
@@ -111,12 +119,18 @@ public class TableController {
      */
     @PostMapping("save/template/{datasourceId}/{file}")
     public Result<String> saveTemplate(@PathVariable(name = "datasourceId") Long datasourceId
-            , @PathVariable(name = "file") String file)  {
+            , @PathVariable(name = "file") String file){
         //解析文件
-        Map map = JSON.parseObject(file, Map.class);
-        // 生成测试数据
-        tableService.templateImport(map, datasourceId);
-        return Result.ok();
+        try {
+            Map map = JSON.parseObject(file, Map.class);
+            // 生成测试数据
+            tableService.templateImport(map, datasourceId);
+            return Result.ok();
+        }
+        catch(Exception e){
+           throw new ServerException("json格式错误!");
+        }
+
     }
 
     /**

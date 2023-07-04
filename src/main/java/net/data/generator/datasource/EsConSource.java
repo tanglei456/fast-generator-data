@@ -1,11 +1,10 @@
 package net.data.generator.datasource;
 
-import com.alibaba.fastjson.JSONObject;
-import net.data.generator.common.query.Query;
+import com.alibaba.fastjson2.JSONObject;
 import net.data.generator.common.config.GenDataSource;
+import net.data.generator.common.query.Query;
 import net.data.generator.entity.TableEntity;
 import net.data.generator.entity.TableFieldEntity;
-import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;

@@ -1,7 +1,8 @@
 package net.data.generator.datasource;
 
-import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
+import com.google.common.collect.Lists;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.data.generator.common.exception.ServerException;
@@ -9,7 +10,7 @@ import net.data.generator.common.query.Query;
 import net.data.generator.common.utils.DbUtils;
 import net.data.generator.common.config.GenDataSource;
 import net.data.generator.common.config.query.AbstractQuerySql;
-import net.data.generator.common.constants.DbType;
+import net.data.generator.common.constants.enums.DbTypeEnum;
 import net.data.generator.entity.TableEntity;
 import net.data.generator.entity.TableFieldEntity;
 
@@ -100,7 +101,7 @@ public class CommonConnectSourceImpl implements CommonConnectSource {
         try {
             AbstractQuerySql query = datasource.getDbQuery();
             String tableFieldsSql = query.tableFieldsSql();
-            if (datasource.getDbType() == DbType.Oracle) {
+            if (datasource.getDbTypeEnum() == DbTypeEnum.Oracle) {
                 DatabaseMetaData md = connection.getMetaData();
                 tableFieldsSql = String.format(tableFieldsSql.replace("#schema", md.getUserName()), tableName);
             } else {
@@ -149,13 +150,17 @@ public class CommonConnectSourceImpl implements CommonConnectSource {
 
     @Override
     public void batchSave(GenDataSource datasource, String tableName, List<Map<String, Object>> mapList) throws Exception {
-            //记录sql占位符与列索引的位置关系
-            Map<String, Integer> map = new HashMap<>();
-            String sql = datasource.getDbQuery().tableDataSaveSql(tableName, map, mapList);
+        //记录sql占位符与列索引的位置关系
+        Map<String, Integer> map = new HashMap<>();
+        String sql = datasource.getDbQuery().tableDataSaveSql(tableName, map, mapList);
 
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
-            connection.setAutoCommit(false);
-            for (Map<String, Object> objectMap : mapList) {
+        PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        connection.setAutoCommit(false);
+        //分批次,1000条为一批次
+        List<List<Map<String, Object>>> lists = Lists.partition(mapList, 1000);
+
+        for (List<Map<String, Object>> list : lists) {
+            for (Map<String, Object> objectMap : list) {
                 objectMap.forEach((name, value) -> {
                     try {
                         preparedStatement.setObject(map.get(name), value);
@@ -167,6 +172,8 @@ public class CommonConnectSourceImpl implements CommonConnectSource {
             }
             preparedStatement.executeBatch();
             connection.commit();
+        }
+
     }
 
     @Override

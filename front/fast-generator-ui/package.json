@@ -1,5 +1,5 @@
 {
-  "name": "maku-generator-ui",
+  "name": "fast-generator-ui",
   "version": "2.0.0",
   "scripts": {
     "dev": "vite",
@@ -13,6 +13,7 @@
     "@vueuse/core": "9.1.1",
     "axios": "0.27.2",
     "element-plus": "2.2.18",
+    "js-file-download": "^0.4.12",
     "pinia": "^2.0.29",
     "qs": "6.10.3",
     "sortablejs": "^1.15.0",

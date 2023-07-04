@@ -2,7 +2,7 @@ package net.data.generator.common.config.query;
 
 
 import net.data.generator.common.query.Query;
-import net.data.generator.common.constants.DbType;
+import net.data.generator.common.constants.enums.DbTypeEnum;
 
 import java.util.List;
 import java.util.Map;
@@ -19,7 +19,7 @@ public interface AbstractQuerySql {
     /**
      * 数据库类型
      */
-    DbType dbType();
+    DbTypeEnum dbType();
 
     /**
      * 表信息查询 SQL

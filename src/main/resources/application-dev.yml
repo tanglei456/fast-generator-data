@@ -1,0 +1,25 @@
+spring:
+  datasource:
+    # MySQL
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://10.3.8.236:3306/data_generator?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&CatalogMeansCurrent=true
+    username: root
+    password: 123456
+  main:
+    allow-bean-definition-overriding: true
+  redis:
+    host: 10.4.3.138
+    port: 6379
+    lettuce:
+      pool:
+        max-active: -1 # 连接池最大连接数（使用负值表示没有限制）
+        max-idle: 3000 # 连接池中的最大空闲连接
+        max-wait: 30 # 连接池最大阻塞等待时间（使用负值表示没有限制）
+        min-idle: 3000 # 连接池中的最小空闲连接
+    database: 13
+    password: 123456
+#测试数据生成
+generator:
+  data-number: 100000
+  # excel、dbf临时存放路径
+  temPath: D:/opt

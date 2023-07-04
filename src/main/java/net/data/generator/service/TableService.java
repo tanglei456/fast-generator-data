@@ -27,9 +27,10 @@ public interface TableService extends BaseService<TableEntity> {
     /**
      * 表名查询表字段信息
      * @param tableName
+     * @param dataSourceId
      * @return
      */
-    TableEntity getByTableName(String tableName);
+    TableEntity getByTableName(String tableName, String dataSourceId);
 
 
     TableEntity getByTableId(String tableId);

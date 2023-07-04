@@ -3,7 +3,7 @@ package net.data.generator.common.config.query;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import net.data.generator.common.query.Query;
-import net.data.generator.common.constants.DbType;
+import net.data.generator.common.constants.enums.DbTypeEnum;
 
 /**
  * SQLServer查询
@@ -13,8 +13,8 @@ import net.data.generator.common.constants.DbType;
 public class SQLServerQuerySql implements AbstractQuerySql {
 
     @Override
-    public DbType dbType() {
-        return DbType.SQLServer;
+    public DbTypeEnum dbType() {
+        return DbTypeEnum.SQLServer;
     }
 
     @Override
