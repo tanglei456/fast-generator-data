@@ -16,6 +16,7 @@ logging:
   file:
     path: ./logs
     name: ./logs/all/${spring.application.name}.log
+  level: info
 
 #mybatis
 mybatis-plus:
