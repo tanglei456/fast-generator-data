@@ -23,7 +23,7 @@
 - 执行db/mysql.sql文件，初始化数据
 - 修改application.yml，更新MySQL账号和密码、数据库名称
 - 运行GeneratorApplication.java，则可启动项目
-- 项目访问路径：http://localhost:3000/fast-generator-data
+演示地址:项目访问路径：http://124.222.236.186/fast-generator-data
 
 ## 效果图
 ![输入图片说明](images/1.1.png)
